@@ -1,0 +1,38 @@
+{
+  "name": "rift-forge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Rift Forge - an original mobile-first platform fighter",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "test": "vitest run tests/unit tests/scenarios",
+    "test:unit": "vitest run tests/unit tests/scenarios",
+    "test:e2e": "playwright test",
+    "test:pwa": "npm run build && playwright test --config=playwright.pwa.config.ts",
+    "test:balance": "tsx scripts/balance.ts --games=1600 --report=artifacts/balance-fast.json",
+    "test:balance:full": "tsx scripts/balance.ts --games=2400 --report=artifacts/balance-full.json --markdown=BALANCE_REPORT.md",
+    "screenshots": "playwright test tests/e2e/visual.spec.ts --project=galaxy-s23-landscape --project=galaxy-s23-portrait --project=narrow-320 --project=desktop",
+    "verify": "npm run lint && npm run typecheck && npm test && npm run test:balance:full && npm run build && npm run test:e2e && playwright test --config=playwright.pwa.config.ts"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
+  }
+}

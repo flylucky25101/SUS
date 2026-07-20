@@ -1,0 +1,73 @@
+import { expect, test } from '@playwright/test';
+import { expectNoBrowserIssues, gotoMain, installStableSettings, observeBrowserIssues } from './helpers';
+
+test.describe('complete illustrated art pass', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'galaxy-s23-landscape', 'Complete art checks use one representative Chromium viewport.');
+    await installStableSettings(page);
+  });
+
+  test('shows the shop and loads every fighter, stage, and UI artwork', async ({ page }) => {
+    const issues = observeBrowserIssues(page);
+    await gotoMain(page);
+    await page.locator('[data-action="shop"]').click();
+    await expect(page.locator('.shop-screen')).toBeVisible();
+    await expect(page.locator('.shop-fighter')).toHaveCount(4);
+    await expect(page.locator('.shop-stage')).toHaveCount(2);
+    await expect(page.locator('.shop-owned')).toHaveCount(6);
+
+    const dimensions = await page.evaluate(async () => {
+      const paths = [
+        '/assets/fighters/kade-spritesheet.png',
+        '/assets/fighters/mira-spritesheet.png',
+        '/assets/fighters/bram-spritesheet.png',
+        '/assets/fighters/suri-spritesheet.png',
+        '/assets/stages/vector-spire-bg.webp',
+        '/assets/stages/drift-garden-bg.webp',
+        '/assets/ui/rift-forge-background.webp',
+      ];
+      return Promise.all(paths.map((path) => new Promise<{ path: string; width: number; height: number }>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({ path, width: image.naturalWidth, height: image.naturalHeight });
+        image.onerror = () => reject(new Error(`Failed to load ${path}`));
+        image.src = path;
+      })));
+    });
+    expect(dimensions.slice(0, 4).every(({ width, height }) => width === 512 && height === 384)).toBe(true);
+    expect(dimensions.slice(4).every(({ width, height }) => width === 1280 && height === 720)).toBe(true);
+
+    await page.locator('.shop-fighter').first().click();
+    await expect(page.locator('[data-toast]')).toHaveClass(/is-visible/);
+    await page.setViewportSize({ width: 360, height: 780 });
+    await expect(page.locator('.shop-screen')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expectNoBrowserIssues(issues);
+  });
+
+  test('runs BRAM versus SURI on the illustrated Drift Garden', async ({ page }) => {
+    const issues = observeBrowserIssues(page);
+    await gotoMain(page);
+    await page.locator('[data-action="quick"]').click();
+    await page.getByTestId('fighter-bram').click();
+    await page.getByTestId('fighter-suri').click();
+    await page.locator('[data-action="fighters-next"]').click();
+    await page.getByTestId('stage-drift-garden').click();
+    await page.locator('[data-action="stages-next"]').click();
+    await page.locator('[data-action="select-difficulty"][data-value="normal"]').click();
+    await page.locator('[data-action="begin-match"]').click();
+    await expect(page.locator('canvas')).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => {
+      const state = window.__RIFT_DEBUG__?.getState();
+      const p1 = window.__RIFT_DEBUG__?.getFighterSpriteSnapshot('p1');
+      const p2 = window.__RIFT_DEBUG__?.getFighterSpriteSnapshot('p2');
+      return {
+        fighters: state?.fighters.map((fighter) => fighter.definitionId) ?? [],
+        stage: state?.options.stageId ?? null,
+        p1Ready: p1?.ready ?? false,
+        p2Ready: p2?.ready ?? false,
+        stageReady: window.__RIFT_DEBUG__?.isStageBackgroundReady() ?? false,
+      };
+    })).toEqual({ fighters: ['bram', 'suri'], stage: 'drift-garden', p1Ready: true, p2Ready: true, stageReady: true });
+    await expectNoBrowserIssues(issues);
+  });
+});

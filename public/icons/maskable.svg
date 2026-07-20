@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Rift Forge maskable icon">
+  <rect width="512" height="512" fill="#080b12"/>
+  <circle cx="256" cy="256" r="184" fill="#101c28" stroke="#35d9ff" stroke-width="18"/>
+  <path d="M128 132h104v60h-44v44h-60zm256 0v104h-60v-44h-44v-60zM128 380V276h60v44h44v60zm256 0H280v-60h44v-44h60z" fill="#35d9ff"/>
+  <path d="M235 145h42l-15 85 55 23-68 108 15-82-66-26z" fill="#eefaff"/>
+</svg>
