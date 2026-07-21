@@ -753,16 +753,17 @@ body {
 
 .portrait {
   background-repeat: no-repeat;
-  background-position: 0 0;
-  background-size: 800% 600%;
+  background-position: center bottom;
+  background-size: contain;
   image-rendering: auto;
+  filter: drop-shadow(0 5px 10px color-mix(in srgb, var(--fighter) 12%, transparent));
 }
 
-.portrait--kade { background-image: url('/assets/fighters/kade-spritesheet.png'); }
-.portrait--mira { background-image: url('/assets/fighters/mira-spritesheet.png'); }
-.portrait--bram { background-image: url('/assets/fighters/bram-spritesheet.png'); }
-.portrait--suri { background-image: url('/assets/fighters/suri-spritesheet.png'); }
-.portrait::before { content: ""; position: absolute; inset: 8% 12%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb,var(--fighter) 25%,transparent), transparent 68%); }
+.portrait--kade { background-image: url('/assets/portraits/kade-portrait.png'); }
+.portrait--mira { background-image: url('/assets/portraits/mira-portrait.png'); }
+.portrait--bram { background-image: url('/assets/portraits/bram-portrait.png'); }
+.portrait--suri { background-image: url('/assets/portraits/suri-portrait.png'); }
+.portrait::before { content: ""; position: absolute; inset: 12% 24%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb,var(--fighter) 12%,transparent), transparent 68%); }
 
 .stage-preview {
   background-position: center;

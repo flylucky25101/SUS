@@ -22,6 +22,10 @@ test.describe('complete illustrated art pass', () => {
         '/assets/fighters/mira-spritesheet.png',
         '/assets/fighters/bram-spritesheet.png',
         '/assets/fighters/suri-spritesheet.png',
+        '/assets/portraits/kade-portrait.png',
+        '/assets/portraits/mira-portrait.png',
+        '/assets/portraits/bram-portrait.png',
+        '/assets/portraits/suri-portrait.png',
         '/assets/stages/vector-spire-bg.webp',
         '/assets/stages/drift-garden-bg.webp',
         '/assets/ui/rift-forge-background.webp',
@@ -34,7 +38,9 @@ test.describe('complete illustrated art pass', () => {
       })));
     });
     expect(dimensions.slice(0, 4).every(({ width, height }) => width === 512 && height === 384)).toBe(true);
-    expect(dimensions.slice(4).every(({ width, height }) => width === 1280 && height === 720)).toBe(true);
+    expect(dimensions.slice(4, 8).every(({ width, height }) => width === 384 && height === 512)).toBe(true);
+    expect(dimensions.slice(8).every(({ width, height }) => width === 1280 && height === 720)).toBe(true);
+    await expect(page.locator('.shop-fighter').first().locator('.portrait')).toHaveCSS('background-size', 'contain');
 
     await page.locator('.shop-fighter').first().click();
     await expect(page.locator('[data-toast]')).toHaveClass(/is-visible/);
