@@ -40,8 +40,9 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
     await gotoMain(page);
     await startQuickMatch(page);
     await page.setViewportSize({ width: 360, height: 780 });
-    await expect(page.locator('.rotation-gate')).toBeVisible();
-    await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'galaxy-s23-portrait-rotation.png') });
+    await expect(page.locator('html')).toHaveClass(/virtual-landscape/);
+    await expect(page.locator('.rotation-gate')).toBeHidden();
+    await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'galaxy-s23-portrait-auto-landscape.png') });
   } else if (project === 'narrow-320') {
     await gotoMain(page);
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'narrow-320.png'), fullPage: true });

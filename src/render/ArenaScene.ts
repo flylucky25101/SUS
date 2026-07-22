@@ -57,6 +57,9 @@ const PLAYER_SPRITE_FRAME_SIZE = 64;
 const PLAYER_SPRITE_DISPLAY_SIZE = 128;
 const PLAYER_SPRITE_REFERENCE_HEIGHT = 86;
 const PLAYER_SPRITE_FOOT_BASELINE = 60;
+const COMPACT_FIGHTER_VISUAL_SCALE = 1.75;
+const COMPACT_VIEWPORT_MAX_WIDTH = 960;
+const COMPACT_VIEWPORT_MAX_HEIGHT = 520;
 
 interface FighterSpriteTracking {
   animation: SpriteAnimationName;
@@ -239,6 +242,14 @@ export class ArenaScene extends Phaser.Scene {
     return this.fighterSpriteAnimators[id]?.snapshot() ?? null;
   }
 
+  getFighterVisualScale(): number {
+    const viewportWidth = Math.max(window.innerWidth, window.innerHeight);
+    const viewportHeight = Math.min(window.innerWidth, window.innerHeight);
+    return viewportWidth <= COMPACT_VIEWPORT_MAX_WIDTH && viewportHeight <= COMPACT_VIEWPORT_MAX_HEIGHT
+      ? COMPACT_FIGHTER_VISUAL_SCALE
+      : 1;
+  }
+
   isStageBackgroundReady(): boolean {
     return this.stageBackgroundImage !== null;
   }
@@ -375,7 +386,11 @@ export class ArenaScene extends Phaser.Scene {
     const feet = fighter.position.y + bob;
     const facing = fighter.facing;
     const alpha = fighter.status === 'respawn' ? 0.35 + Math.abs(Math.sin(this.world.tick / 6)) * 0.55 : 1;
-    const displaySize = PLAYER_SPRITE_DISPLAY_SIZE * (definition.stats.height / PLAYER_SPRITE_REFERENCE_HEIGHT);
+    // This scale affects only the artwork. Physics coordinates, hurtboxes and hitboxes
+    // continue to use the unchanged fighter definition dimensions.
+    const displaySize = PLAYER_SPRITE_DISPLAY_SIZE
+      * (definition.stats.height / PLAYER_SPRITE_REFERENCE_HEIGHT)
+      * this.getFighterVisualScale();
     const footOffset = (PLAYER_SPRITE_FRAME_SIZE - PLAYER_SPRITE_FOOT_BASELINE) * (displaySize / PLAYER_SPRITE_FRAME_SIZE);
     const spriteDrawn = this.fighterSpriteAnimators[fighter.id]?.draw({
       x,

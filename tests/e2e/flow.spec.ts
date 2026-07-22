@@ -22,6 +22,7 @@ test.describe('Galaxy S23 complete flow', () => {
     await gotoMain(page);
     await startQuickMatch(page);
     await expect(page.locator('[data-countdown]')).toHaveClass(/is-hidden/, { timeout: 12_000 });
+    await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getFighterVisualScale() ?? 1)).toBe(1.75);
 
     await dispatchPointer(page, '[data-stick-zone]', 'pointerdown', 11, 0.28, 0.62);
     await dispatchPointer(page, '[data-stick-zone]', 'pointermove', 11, 0.7, 0.62);
@@ -55,13 +56,28 @@ test.describe('Galaxy S23 complete flow', () => {
     await expect(page.locator('.pause-card')).toBeHidden();
 
     await page.setViewportSize({ width: 360, height: 780 });
-    await expect(page.locator('.rotation-gate')).toBeVisible();
-    const tickWhileRotated = await page.evaluate(() => window.__RIFT_DEBUG__?.getState()?.tick ?? 0);
-    await page.waitForTimeout(120);
-    expect(await page.evaluate(() => window.__RIFT_DEBUG__?.getState()?.tick ?? -1)).toBe(tickWhileRotated);
-    await page.setViewportSize({ width: 780, height: 360 });
+    await expect(page.locator('html')).toHaveClass(/virtual-landscape/);
     await expect(page.locator('.rotation-gate')).toBeHidden();
+    const gameLayout = await page.locator('[data-game-shell]').evaluate((element) => ({
+      width: (element as HTMLElement).offsetWidth,
+      height: (element as HTMLElement).offsetHeight,
+    }));
+    expect(gameLayout.width).toBeGreaterThan(gameLayout.height);
+    const tickWhileRotated = await page.evaluate(() => window.__RIFT_DEBUG__?.getState()?.tick ?? 0);
     await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getState()?.tick ?? 0)).toBeGreaterThan(tickWhileRotated);
+
+    // iPhone 16 CSS viewport equivalents: portrait fallback and native landscape.
+    await page.setViewportSize({ width: 393, height: 852 });
+    await expect(page.locator('html')).toHaveClass(/virtual-landscape/);
+    const iphoneLayout = await page.locator('[data-game-shell]').evaluate((element) => ({
+      width: (element as HTMLElement).offsetWidth,
+      height: (element as HTMLElement).offsetHeight,
+    }));
+    expect(iphoneLayout).toEqual({ width: 852, height: 393 });
+    await page.setViewportSize({ width: 852, height: 393 });
+    await expect(page.locator('html')).not.toHaveClass(/virtual-landscape/);
+    await expect(page.locator('.rotation-gate')).toBeHidden();
+    await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getFighterVisualScale() ?? 1)).toBe(1.75);
 
     await holdTouchPause(page);
     await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getAudioState() ?? 'uninitialized')).toBe('suspended');

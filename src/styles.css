@@ -847,3 +847,51 @@ body {
   animation-iteration-count: 1 !important;
   transition-duration: .001ms !important;
 }
+
+/* Mobile browsers do not consistently expose orientation locking. When a bout
+   starts in portrait, rotate only the game shell and give Phaser true landscape
+   layout dimensions. Menus remain naturally usable before the match starts. */
+html.virtual-landscape .game-shell {
+  --safe-top: env(safe-area-inset-right, 0px);
+  --safe-right: env(safe-area-inset-bottom, 0px);
+  --safe-bottom: env(safe-area-inset-left, 0px);
+  --safe-left: env(safe-area-inset-top, 0px);
+  position: fixed;
+  top: 0;
+  left: 100dvw;
+  width: 100dvh;
+  height: 100dvw;
+  min-height: 0;
+  transform: rotate(90deg);
+  transform-origin: top left;
+}
+
+html.virtual-landscape .game-shell .rotation-gate { display: none; }
+
+html.virtual-landscape .combat-hud {
+  left: max(8px,var(--safe-left));
+  right: max(8px,var(--safe-right));
+  top: max(5px,var(--safe-top));
+  grid-template-columns: minmax(145px,1fr) 92px minmax(145px,1fr);
+  gap: 5px;
+}
+html.virtual-landscape .fighter-hud { min-height: 42px; padding: 5px 8px 6px; }
+html.virtual-landscape .hud-name strong { font-size: 10px; }
+html.virtual-landscape .damage-value { margin-top: -9px; font-size: 25px; }
+html.virtual-landscape .match-clock time { font-size: 17px; }
+html.virtual-landscape .training-panel,
+html.virtual-landscape .debug-panel { top: calc(max(5px,var(--safe-top)) + 49px); }
+html.virtual-landscape .training-actions button,
+html.virtual-landscape .training-actions > span { min-height: 22px; padding: 0 6px; font-size: 6px; }
+html.virtual-landscape .action-cluster { right: max(10px,var(--safe-right)); bottom: max(7px,var(--safe-bottom)); }
+html.virtual-landscape .control-pause { top: -42px; height: 38px; }
+html.virtual-landscape .pause-card,
+html.virtual-landscape .result-card { padding: 16px 20px; }
+html.virtual-landscape .pause-card h1,
+html.virtual-landscape .result-card h1 { margin-bottom: 8px; }
+html.virtual-landscape .pause-card > button { min-height: 40px; }
+html.virtual-landscape .result-stats { margin: 6px 0; }
+html.virtual-landscape .result-stats span { padding: 6px 3px; }
+html.virtual-landscape .result-actions .primary-button,
+html.virtual-landscape .result-actions .secondary-button,
+html.virtual-landscape .result-actions .text-button { min-height: 40px; }

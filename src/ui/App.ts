@@ -52,6 +52,7 @@ interface DebugBridge {
   getState: () => WorldState | null;
   getPlayerSpriteSnapshot: () => SpriteAnimatorSnapshot | null;
   getFighterSpriteSnapshot: (id: FighterInstanceId) => SpriteAnimatorSnapshot | null;
+  getFighterVisualScale: () => number;
   isStageBackgroundReady: () => boolean;
   getAudioState: () => AudioContextState | 'uninitialized';
   releaseInputs: () => void;
@@ -413,6 +414,7 @@ export class RiftForgeApp {
       hazards: mode === 'debug' ? false : this.settings.hazards,
     };
     this.renderGameShell(options);
+    this.updateVirtualLandscape();
     const parent = requiredElement<HTMLElement>(this.root, '[data-game-canvas]');
     const touchRoot = requiredElement<HTMLElement>(this.root, '[data-touch-root]');
     this.input.attachTouch(touchRoot);
@@ -436,6 +438,7 @@ export class RiftForgeApp {
         getState: () => this.renderer?.scene.getWorld() ?? null,
         getPlayerSpriteSnapshot: () => this.renderer?.scene.getPlayerSpriteSnapshot() ?? null,
         getFighterSpriteSnapshot: (id) => this.renderer?.scene.getFighterSpriteSnapshot(id) ?? null,
+        getFighterVisualScale: () => this.renderer?.scene.getFighterVisualScale() ?? 1,
         isStageBackgroundReady: () => this.renderer?.scene.isStageBackgroundReady() ?? false,
         getAudioState: () => this.audio.getContextState(),
         releaseInputs: () => this.input.releaseAll(),
@@ -677,7 +680,10 @@ export class RiftForgeApp {
       case 'training': this.beginSelection('training'); break;
       case 'shop': this.setScreen('shop'); break;
       case 'help': this.setScreen('help'); break;
-      case 'debug': this.startGame('debug'); break;
+      case 'debug':
+        void this.requestLandscapeOrientation();
+        this.startGame('debug');
+        break;
       case 'open-settings':
         this.settingsReturnScreen = this.screen;
         this.setScreen('settings');
@@ -710,7 +716,10 @@ export class RiftForgeApp {
         }
         break;
       case 'stages-next':
-        if (this.selection.mode === 'training') this.startGame('training');
+        if (this.selection.mode === 'training') {
+          void this.requestLandscapeOrientation();
+          this.startGame('training');
+        }
         else this.setScreen('difficulty');
         break;
       case 'select-difficulty':
@@ -719,7 +728,10 @@ export class RiftForgeApp {
           this.renderDifficultySelect();
         }
         break;
-      case 'begin-match': this.startGame('quick'); break;
+      case 'begin-match':
+        void this.requestLandscapeOrientation();
+        this.startGame('quick');
+        break;
       case 'toggle-setting': this.toggleSetting(value); break;
       case 'set-language': this.setLanguage(value); break;
       case 'fullscreen': void this.requestFullscreen(); break;
@@ -856,6 +868,7 @@ export class RiftForgeApp {
   }
 
   private handleOrientation(): void {
+    this.updateVirtualLandscape();
     if (this.screen !== 'game' || this.renderer === null || this.matchEnded) return;
     if (this.isPortrait()) {
       if (!this.manuallyPaused) this.autoPausedByPortrait = true;
@@ -873,7 +886,34 @@ export class RiftForgeApp {
   }
 
   private isPortrait(): boolean {
-    return window.innerHeight > window.innerWidth;
+    return window.innerHeight > window.innerWidth && !document.documentElement.classList.contains('virtual-landscape');
+  }
+
+  private updateVirtualLandscape(): void {
+    const shouldRotate = this.screen === 'game'
+      && window.innerHeight > window.innerWidth
+      && (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0);
+    document.documentElement.classList.toggle('virtual-landscape', shouldRotate);
+  }
+
+  private async requestLandscapeOrientation(): Promise<void> {
+    const orientation = screen.orientation as (ScreenOrientation & {
+      lock?: (value: 'landscape') => Promise<void>;
+    }) | undefined;
+    if (orientation?.lock === undefined) return;
+    try {
+      // Most mobile browsers only allow orientation locking from a user gesture
+      // while fullscreen (installed PWAs can honor the manifest directly).
+      if (import.meta.env.MODE !== 'test'
+        && document.fullscreenElement === null
+        && document.documentElement.requestFullscreen !== undefined) {
+        await document.documentElement.requestFullscreen();
+      }
+      await orientation.lock('landscape');
+    } catch {
+      // Browser tabs (notably iOS Safari) can reject orientation locking.
+      // The virtual-landscape layout remains active as a no-error fallback.
+    }
   }
 
   private async requestFullscreen(): Promise<void> {
@@ -921,6 +961,7 @@ export class RiftForgeApp {
     this.hud = null;
     this.matchEnded = false;
     this.manuallyPaused = false;
+    document.documentElement.classList.remove('virtual-landscape');
     delete window.__RIFT_DEBUG__;
   }
 }
