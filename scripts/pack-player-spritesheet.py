@@ -93,16 +93,46 @@ def ordered_main_components(
 ) -> list[list[Component]]:
     expected = sum(frame_counts)
     main = [component for component in components if component.area >= MAIN_COMPONENT_MIN_AREA]
-    if len(main) != expected:
-        raise ValueError(f"Expected {expected} character poses, found {len(main)}.")
+    if len(main) < expected:
+        raise ValueError(f"Expected at least {expected} character poses, found {len(main)}.")
 
-    by_vertical_position = sorted(main, key=lambda component: (component.center_y, component.center_x))
+    by_vertical_position = sorted(main, key=lambda component: component.center_y)
+    row_breaks = sorted(
+        sorted(
+            range(len(by_vertical_position) - 1),
+            key=lambda index: (
+                by_vertical_position[index + 1].center_y
+                - by_vertical_position[index].center_y
+            ),
+            reverse=True,
+        )[:len(frame_counts) - 1],
+    )
+    grouped_rows: list[list[Component]] = []
+    start = 0
+    for row_break in (*row_breaks, len(by_vertical_position) - 1):
+        grouped_rows.append(by_vertical_position[start:row_break + 1])
+        start = row_break + 1
+
+    if len(grouped_rows) != len(frame_counts):
+        raise ValueError(f"Expected {len(frame_counts)} animation rows, found {len(grouped_rows)}.")
+
     rows: list[list[Component]] = []
-    offset = 0
-    for frame_count in frame_counts:
-        row = sorted(by_vertical_position[offset:offset + frame_count], key=lambda component: component.center_x)
-        rows.append(row)
-        offset += frame_count
+    for row_index, (group, frame_count) in enumerate(zip(grouped_rows, frame_counts, strict=True)):
+        ordered = sorted(group, key=lambda component: component.center_x)
+        if len(ordered) < frame_count:
+            raise ValueError(
+                f"Animation row {row_index} requires {frame_count} poses, found {len(ordered)}."
+            )
+        if len(ordered) > frame_count:
+            if frame_count == 1:
+                ordered = [ordered[len(ordered) // 2]]
+            else:
+                selected_indices = [
+                    round(index * (len(ordered) - 1) / (frame_count - 1))
+                    for index in range(frame_count)
+                ]
+                ordered = [ordered[index] for index in selected_indices]
+        rows.append(ordered)
     return rows
 
 
@@ -115,7 +145,11 @@ def assign_accessories(
     assignments = {component.label: [component.label] for component in main}
 
     for accessory in components:
-        if accessory.label in main_labels or accessory.area < ACCESSORY_MIN_AREA:
+        if (
+            accessory.label in main_labels
+            or accessory.area >= MAIN_COMPONENT_MIN_AREA
+            or accessory.area < ACCESSORY_MIN_AREA
+        ):
             continue
         nearest = min(
             main,

@@ -83,7 +83,7 @@ function isDifficulty(value: string | undefined): value is Difficulty {
 }
 
 function isFighterId(value: string | undefined): value is FighterId {
-  return value === 'kade' || value === 'mira' || value === 'bram' || value === 'suri';
+  return value === 'kade' || value === 'mira' || value === 'bram' || value === 'suri' || value === 'juno' || value === 'orin';
 }
 
 function isStageId(value: string | undefined): value is StageDefinition['id'] {

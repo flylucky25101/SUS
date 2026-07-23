@@ -14,8 +14,8 @@
     "test:unit": "vitest run tests/unit tests/scenarios",
     "test:e2e": "playwright test",
     "test:pwa": "npm run build && playwright test --config=playwright.pwa.config.ts",
-    "test:balance": "tsx scripts/balance.ts --games=1600 --report=artifacts/balance-fast.json",
-    "test:balance:full": "tsx scripts/balance.ts --games=2400 --report=artifacts/balance-full.json --markdown=BALANCE_REPORT.md",
+    "test:balance": "tsx scripts/balance.ts --games=2520 --report=artifacts/balance-fast.json",
+    "test:balance:full": "tsx scripts/balance.ts --games=5040 --report=artifacts/balance-full.json --markdown=BALANCE_REPORT.md",
     "screenshots": "playwright test tests/e2e/visual.spec.ts --project=galaxy-s23-landscape --project=galaxy-s23-portrait --project=narrow-320 --project=desktop",
     "verify": "npm run lint && npm run typecheck && npm test && npm run test:balance:full && npm run build && npm run test:e2e && playwright test --config=playwright.pwa.config.ts"
   },

@@ -12,9 +12,9 @@ test.describe('complete illustrated art pass', () => {
     await gotoMain(page);
     await page.locator('[data-action="shop"]').click();
     await expect(page.locator('.shop-screen')).toBeVisible();
-    await expect(page.locator('.shop-fighter')).toHaveCount(4);
+    await expect(page.locator('.shop-fighter')).toHaveCount(6);
     await expect(page.locator('.shop-stage')).toHaveCount(2);
-    await expect(page.locator('.shop-owned')).toHaveCount(6);
+    await expect(page.locator('.shop-owned')).toHaveCount(8);
 
     const dimensions = await page.evaluate(async () => {
       const paths = [
@@ -22,10 +22,14 @@ test.describe('complete illustrated art pass', () => {
         '/assets/fighters/mira-spritesheet.png',
         '/assets/fighters/bram-spritesheet.png',
         '/assets/fighters/suri-spritesheet.png',
+        '/assets/fighters/juno-spritesheet.png',
+        '/assets/fighters/orin-spritesheet.png',
         '/assets/portraits/kade-portrait.png',
         '/assets/portraits/mira-portrait.png',
         '/assets/portraits/bram-portrait.png',
         '/assets/portraits/suri-portrait.png',
+        '/assets/portraits/juno-portrait.png',
+        '/assets/portraits/orin-portrait.png',
         '/assets/stages/vector-spire-bg.webp',
         '/assets/stages/drift-garden-bg.webp',
         '/assets/ui/rift-forge-background.webp',
@@ -37,9 +41,9 @@ test.describe('complete illustrated art pass', () => {
         image.src = path;
       })));
     });
-    expect(dimensions.slice(0, 4).every(({ width, height }) => width === 512 && height === 384)).toBe(true);
-    expect(dimensions.slice(4, 8).every(({ width, height }) => width === 384 && height === 512)).toBe(true);
-    expect(dimensions.slice(8).every(({ width, height }) => width === 1280 && height === 720)).toBe(true);
+    expect(dimensions.slice(0, 6).every(({ width, height }) => width === 512 && height === 384)).toBe(true);
+    expect(dimensions.slice(6, 12).every(({ width, height }) => width === 384 && height === 512)).toBe(true);
+    expect(dimensions.slice(12).every(({ width, height }) => width === 1280 && height === 720)).toBe(true);
     await expect(page.locator('.shop-fighter').first().locator('.portrait')).toHaveCSS('background-size', 'contain');
 
     await page.locator('.shop-fighter').first().click();
@@ -50,12 +54,15 @@ test.describe('complete illustrated art pass', () => {
     await expectNoBrowserIssues(issues);
   });
 
-  test('runs BRAM versus SURI on the illustrated Drift Garden', async ({ page }) => {
+  test('runs JUNO versus ORIN on the illustrated Drift Garden', async ({ page }) => {
     const issues = observeBrowserIssues(page);
     await gotoMain(page);
     await page.locator('[data-action="quick"]').click();
-    await page.getByTestId('fighter-bram').click();
-    await page.getByTestId('fighter-suri').click();
+    await expect(page.locator('.fighter-card')).toHaveCount(6);
+    await expect(page.getByTestId('fighter-juno').locator('strong')).toBeVisible();
+    await expect(page.getByTestId('fighter-orin').locator('strong')).toBeVisible();
+    await page.getByTestId('fighter-juno').click();
+    await page.getByTestId('fighter-orin').click();
     await page.locator('[data-action="fighters-next"]').click();
     await page.getByTestId('stage-drift-garden').click();
     await page.locator('[data-action="stages-next"]').click();
@@ -73,7 +80,7 @@ test.describe('complete illustrated art pass', () => {
         p2Ready: p2?.ready ?? false,
         stageReady: window.__RIFT_DEBUG__?.isStageBackgroundReady() ?? false,
       };
-    })).toEqual({ fighters: ['bram', 'suri'], stage: 'drift-garden', p1Ready: true, p2Ready: true, stageReady: true });
+    })).toEqual({ fighters: ['juno', 'orin'], stage: 'drift-garden', p1Ready: true, p2Ready: true, stageReady: true });
     await expectNoBrowserIssues(issues);
   });
 });

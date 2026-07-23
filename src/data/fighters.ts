@@ -216,6 +216,86 @@ const suriMoves: Readonly<Record<string, MoveDefinition>> = Object.freeze({
   }),
 });
 
+const junoMoves: Readonly<Record<string, MoveDefinition>> = Object.freeze({
+  jab: move('juno', 'jab', '질풍 연타', 'Gale Jab', {
+    startup: 3, active: 2, recovery: 7, landingLag: 5, damage: 3.2, baseKnockback: 1.9, growth: 0.58,
+    angle: 23, hitstun: 7, hitstop: 2, range: 46, hitbox: { x: 18, y: -44, width: 44, height: 32 }, cancel: ['normal'], effect: 'emerald-streak',
+  }),
+  sideNormal: move('juno', 'side-normal', '횡풍 차기', 'Crosswind Kick', {
+    startup: 6, active: 4, recovery: 16, landingLag: 8, damage: 7.5, baseKnockback: 3.4, growth: 0.9,
+    angle: 32, hitstun: 11, hitstop: 4, range: 70, hitbox: { x: 18, y: -52, width: 66, height: 42 }, impulse: { x: 2.4, y: 0 }, effect: 'emerald-arc',
+  }),
+  upNormal: move('juno', 'up-normal', '터빈 상승', 'Rotor Rise', {
+    startup: 5, active: 5, recovery: 15, landingLag: 8, damage: 6.7, baseKnockback: 3, growth: 0.84,
+    angle: 86, hitstun: 10, hitstop: 4, range: 62, hitbox: { x: -25, y: -94, width: 52, height: 68 }, effect: 'emerald-lift',
+  }),
+  downNormal: move('juno', 'down-normal', '활주 쓸기', 'Slipstream Sweep', {
+    startup: 5, active: 5, recovery: 16, landingLag: 7, damage: 6.2, baseKnockback: 2.7, growth: 0.77,
+    angle: 20, hitstun: 10, hitstop: 3, range: 68, hitbox: { x: 16, y: -22, width: 66, height: 24 }, impulse: { x: 2.8, y: 0 }, effect: 'emerald-low',
+  }),
+  neutralSpecial: move('juno', 'neutral-special', '제피르 탄', 'Zephyr Shot', {
+    startup: 11, active: 2, recovery: 19, landingLag: 10, damage: 5.8, baseKnockback: 3, growth: 0.78,
+    angle: 38, hitstun: 10, hitstop: 3, range: 250, hitbox: { x: 24, y: -48, width: 18, height: 18 }, effect: 'emerald-bolt', sound: 'special',
+    availability: ['ground', 'air'], projectile: { speed: 11.2, lifetimeFrames: 46, radius: 9, maxActive: 1, gravity: 0 },
+  }),
+  sideSpecial: move('juno', 'side-special', '제트스트림', 'Jetstream Drive', {
+    startup: 7, active: 6, recovery: 25, landingLag: 13, damage: 9, baseKnockback: 3.9, growth: 0.92,
+    angle: 29, hitstun: 13, hitstop: 5, range: 88, hitbox: { x: 14, y: -55, width: 76, height: 48 }, impulse: { x: 10.5, y: -1.2 }, projectileInvulnerability: true, effect: 'emerald-trail', sound: 'special', availability: ['ground', 'air'],
+  }),
+  upSpecial: move('juno', 'up-special', '사이클론 리프트', 'Cyclone Lift', {
+    startup: 6, active: 7, recovery: 28, landingLag: 18, damage: 7.5, baseKnockback: 3.2, growth: 0.84,
+    angle: 82, hitstun: 10, hitstop: 4, range: 58, hitbox: { x: -27, y: -88, width: 54, height: 76 }, impulse: { x: 3.1, y: -17 }, effect: 'emerald-column', sound: 'special', availability: ['ground', 'air'],
+  }),
+  downSpecial: move('juno', 'down-special', '윈드브레이크', 'Windbreak Counter', {
+    startup: 5, active: 8, recovery: 25, landingLag: 14, damage: 5.6, baseKnockback: 4.2, growth: 0.76,
+    angle: 58, hitstun: 9, hitstop: 4, range: 52, hitbox: { x: -26, y: -62, width: 52, height: 56 }, invulnerability: 5, reflectProjectiles: true, cooldown: 42, effect: 'emerald-guard', sound: 'dodge', availability: ['ground', 'air'],
+  }),
+  airNormal: move('juno', 'air-normal', '폭풍 회전', 'Tempest Wheel', {
+    startup: 4, active: 8, recovery: 18, landingLag: 11, damage: 6, baseKnockback: 2.8, growth: 0.78,
+    angle: 48, hitstun: 10, hitstop: 3, range: 68, hitbox: { x: -36, y: -62, width: 74, height: 60 }, effect: 'emerald-ring', availability: ['air'],
+  }),
+});
+
+const orinMoves: Readonly<Record<string, MoveDefinition>> = Object.freeze({
+  jab: move('orin', 'jab', '균열 주먹', 'Rift Knuckle', {
+    startup: 5, active: 3, recovery: 9, landingLag: 7, damage: 5.1, baseKnockback: 2.8, growth: 0.7,
+    angle: 25, hitstun: 9, hitstop: 4, range: 52, hitbox: { x: 20, y: -48, width: 50, height: 38 }, cancel: ['normal'], effect: 'crimson-smash',
+  }),
+  sideNormal: move('orin', 'side-normal', '레드라인 파쇄', 'Redline Break', {
+    startup: 11, active: 5, recovery: 23, landingLag: 13, damage: 12.8, baseKnockback: 5.3, growth: 1.1,
+    angle: 34, hitstun: 17, hitstop: 7, range: 90, hitbox: { x: 20, y: -62, width: 86, height: 56 }, armor: 4, effect: 'crimson-break', sound: 'heavy',
+  }),
+  upNormal: move('orin', 'up-normal', '균열 승천', 'Rift Upper', {
+    startup: 9, active: 5, recovery: 21, landingLag: 12, damage: 10.8, baseKnockback: 4.6, growth: 1.02,
+    angle: 84, hitstun: 15, hitstop: 6, range: 74, hitbox: { x: -34, y: -104, width: 70, height: 78 }, armor: 2, effect: 'crimson-upper', sound: 'heavy',
+  }),
+  downNormal: move('orin', 'down-normal', '단층 쓸기', 'Fault Sweep', {
+    startup: 8, active: 5, recovery: 19, landingLag: 11, damage: 9.7, baseKnockback: 4.4, growth: 0.96,
+    angle: 24, hitstun: 14, hitstop: 6, range: 82, hitbox: { x: 17, y: -28, width: 80, height: 30 }, effect: 'crimson-fault', sound: 'heavy',
+  }),
+  neutralSpecial: move('orin', 'neutral-special', '중력 못', 'Gravity Nail', {
+    startup: 16, active: 2, recovery: 24, landingLag: 14, damage: 10.2, baseKnockback: 4.8, growth: 1.04,
+    angle: 42, hitstun: 15, hitstop: 6, range: 330, hitbox: { x: 24, y: -54, width: 24, height: 24 }, cooldown: 30, effect: 'crimson-orb', sound: 'special',
+    availability: ['ground', 'air'], projectile: { speed: 5.8, lifetimeFrames: 72, radius: 14, maxActive: 1, gravity: 0.01 },
+  }),
+  sideSpecial: move('orin', 'side-special', '사건 지평 돌진', 'Event Rush', {
+    startup: 10, active: 8, recovery: 28, landingLag: 16, damage: 12, baseKnockback: 5.2, growth: 1.03,
+    angle: 31, hitstun: 16, hitstop: 7, range: 86, hitbox: { x: 18, y: -65, width: 80, height: 60 }, impulse: { x: 7.2, y: -0.4 }, armor: 6, effect: 'crimson-trail', sound: 'heavy', availability: ['ground', 'air'],
+  }),
+  upSpecial: move('orin', 'up-special', '특이점 상승', 'Singularity Rise', {
+    startup: 9, active: 7, recovery: 31, landingLag: 20, damage: 9.1, baseKnockback: 3.9, growth: 0.92,
+    angle: 80, hitstun: 13, hitstop: 5, range: 66, hitbox: { x: -31, y: -92, width: 62, height: 82 }, impulse: { x: 2.2, y: -13.8 }, armor: 3, effect: 'crimson-column', sound: 'special', availability: ['ground', 'air'],
+  }),
+  downSpecial: move('orin', 'down-special', '붕괴 방어', 'Collapse Guard', {
+    startup: 7, active: 12, recovery: 29, landingLag: 17, damage: 8.8, baseKnockback: 5.8, growth: 0.86,
+    angle: 60, hitstun: 14, hitstop: 6, range: 58, hitbox: { x: -29, y: -68, width: 58, height: 62 }, armor: 10, projectileInvulnerability: true, cooldown: 52, effect: 'crimson-guard', sound: 'special', availability: ['ground', 'air'],
+  }),
+  airNormal: move('orin', 'air-normal', '운석 강타', 'Meteor Cleave', {
+    startup: 8, active: 8, recovery: 22, landingLag: 17, damage: 10.4, baseKnockback: 4.7, growth: 0.98,
+    angle: -62, hitstun: 14, hitstop: 6, range: 68, hitbox: { x: -34, y: -18, width: 70, height: 68 }, impulse: { x: 0, y: 2.6 }, effect: 'crimson-drop', sound: 'heavy', availability: ['air'],
+  }),
+});
+
 export const FIGHTERS: readonly FighterDefinition[] = Object.freeze([
   {
     id: 'kade', name: 'KADE', epithet: { ko: '플럭스 수호자', en: 'Flux Warden' }, role: 'vanguard',
@@ -249,6 +329,22 @@ export const FIGHTERS: readonly FighterDefinition[] = Object.freeze([
     stats: { runSpeed: 5.8, airSpeed: 5.5, acceleration: 1, airAcceleration: 0.52, jumpSpeed: 13.2, doubleJumpSpeed: 12.7, weight: 90, maxFallSpeed: 15, fastFallSpeed: 20, width: 48, height: 82 },
     moves: suriMoves,
   },
+  {
+    id: 'juno', name: 'JUNO', epithet: { ko: '폭풍 주자', en: 'Storm Runner' }, role: 'rush',
+    description: { ko: '공중 기동과 제트스트림 연계로 전장을 가르는 경량 전투원', en: 'An aerial runner who chains wind shots into jetstream pressure.' },
+    color: 0x36e6a0, accent: 0xd8fff0, pattern: 'slash',
+    budget: { mobility: 9, survivability: 4, range: 5, burst: 6, recovery: 9, control: 3 },
+    stats: { runSpeed: 7.6, airSpeed: 7.3, acceleration: 1.28, airAcceleration: 0.68, jumpSpeed: 14.6, doubleJumpSpeed: 14, weight: 82, maxFallSpeed: 16, fastFallSpeed: 22, width: 45, height: 80 },
+    moves: junoMoves,
+  },
+  {
+    id: 'orin', name: 'ORIN', epithet: { ko: '공허 파쇄자', en: 'Void Breaker' }, role: 'vanguard',
+    description: { ko: '중력탄과 장갑 돌진으로 공간을 압박하는 중량형 전투원', en: 'A heavy breaker who controls space with gravity and armored advances.' },
+    color: 0xff4d5f, accent: 0xffd8dc, pattern: 'block',
+    budget: { mobility: 4, survivability: 8, range: 7, burst: 8, recovery: 4, control: 5 },
+    stats: { runSpeed: 4.9, airSpeed: 4.3, acceleration: 0.86, airAcceleration: 0.38, jumpSpeed: 12.1, doubleJumpSpeed: 11, weight: 118, maxFallSpeed: 17, fastFallSpeed: 22, width: 58, height: 90 },
+    moves: orinMoves,
+  },
 ]);
 
 validateFighters(FIGHTERS);
@@ -258,6 +354,8 @@ export const FIGHTER_BY_ID: Readonly<Record<FighterDefinition['id'], FighterDefi
   mira: FIGHTERS[1] as FighterDefinition,
   bram: FIGHTERS[2] as FighterDefinition,
   suri: FIGHTERS[3] as FighterDefinition,
+  juno: FIGHTERS[4] as FighterDefinition,
+  orin: FIGHTERS[5] as FighterDefinition,
 });
 
 export function getFighter(id: FighterDefinition['id']): FighterDefinition {

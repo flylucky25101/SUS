@@ -48,6 +48,8 @@ const FIGHTER_SPRITE_URLS: Readonly<Record<FighterState['definitionId'], string>
   mira: './assets/fighters/mira-spritesheet.png',
   bram: './assets/fighters/bram-spritesheet.png',
   suri: './assets/fighters/suri-spritesheet.png',
+  juno: './assets/fighters/juno-spritesheet.png',
+  orin: './assets/fighters/orin-spritesheet.png',
 });
 const STAGE_BACKGROUND_URLS: Readonly<Record<MatchOptions['stageId'], string>> = Object.freeze({
   'vector-spire': './assets/stages/vector-spire-bg.webp',
@@ -392,6 +394,18 @@ export class ArenaScene extends Phaser.Scene {
       * (definition.stats.height / PLAYER_SPRITE_REFERENCE_HEIGHT)
       * this.getFighterVisualScale();
     const footOffset = (PLAYER_SPRITE_FRAME_SIZE - PLAYER_SPRITE_FOOT_BASELINE) * (displaySize / PLAYER_SPRITE_FRAME_SIZE);
+    graphics.clear();
+    graphics.setAlpha(alpha);
+    graphics.fillStyle(0x000000, 0.32);
+    graphics.fillEllipse(x + facing * 3, fighter.position.y + 4, definition.stats.width * 1.45, 13);
+    const glowStrength = fighter.status === 'attack' || fighter.status === 'charge' ? 0.16 : 0.075;
+    graphics.fillStyle(definition.color, glowStrength);
+    graphics.fillEllipse(
+      x,
+      feet - definition.stats.height * 0.5,
+      definition.stats.width * 1.7,
+      definition.stats.height * 1.08,
+    );
     const spriteDrawn = this.fighterSpriteAnimators[fighter.id]?.draw({
       x,
       y: fighter.position.y + footOffset,
@@ -401,8 +415,6 @@ export class ArenaScene extends Phaser.Scene {
       alpha,
       depth: 4,
     }) === true;
-    graphics.clear();
-    graphics.setAlpha(alpha);
 
     if (fighter.invulnerabilityFrames > 0) {
       graphics.lineStyle(3, 0xffffff, 0.3 + Math.abs(Math.sin(this.world.tick / 4)) * 0.45);
@@ -419,7 +431,9 @@ export class ArenaScene extends Phaser.Scene {
       if (fighter.definitionId === 'kade') this.drawKade(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
       else if (fighter.definitionId === 'mira') this.drawMira(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
       else if (fighter.definitionId === 'bram') this.drawBram(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
-      else this.drawSuri(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
+      else if (fighter.definitionId === 'suri') this.drawSuri(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
+      else if (fighter.definitionId === 'juno') this.drawJuno(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
+      else this.drawOrin(graphics, x, feet, facing, runSwing, attackSwing, hurtTilt, definition.accent);
     }
     graphics.setAlpha(1);
   }
@@ -553,6 +567,74 @@ export class ArenaScene extends Phaser.Scene {
     graphics.fillCircle(orbitX, orbitY, 3);
     graphics.lineStyle(4, 0xa66bff, 1);
     graphics.lineBetween(centerX + 10 * facing, feet - 57, centerX + (28 + attack * 0.5) * facing, feet - 49 - attack * 0.25);
+  }
+
+  private drawJuno(
+    graphics: Phaser.GameObjects.Graphics,
+    x: number,
+    feet: number,
+    facing: number,
+    run: number,
+    attack: number,
+    tilt: number,
+    accent: number,
+  ): void {
+    const centerX = x + tilt * 0.18;
+    graphics.lineStyle(7, 0x07130f, 1);
+    graphics.lineBetween(centerX - 8, feet - 25, centerX - 14 + run * 0.7, feet);
+    graphics.lineBetween(centerX + 8, feet - 25, centerX + 14 - run * 0.7, feet);
+    graphics.fillStyle(0x163d31, 1);
+    graphics.fillRoundedRect(centerX - 16, feet - 68, 32, 43, 9);
+    graphics.fillStyle(0x36e6a0, 1);
+    graphics.fillTriangle(centerX - 24, feet - 67, centerX + 22, feet - 67, centerX, feet - 28);
+    graphics.fillStyle(accent, 1);
+    graphics.fillCircle(centerX, feet - 81, 13);
+    graphics.fillStyle(0x3b342d, 1);
+    graphics.fillTriangle(centerX - 13, feet - 86, centerX + 14, feet - 90, centerX + 4 * facing, feet - 99);
+    const gauntletX = centerX + (25 + attack * 0.75) * facing;
+    const gauntletY = feet - 54 - attack * 0.32;
+    graphics.lineStyle(5, 0x36e6a0, 1);
+    graphics.lineBetween(centerX + 9 * facing, feet - 58, gauntletX, gauntletY);
+    graphics.fillStyle(0x10251f, 1);
+    graphics.fillCircle(gauntletX, gauntletY, 11);
+    graphics.lineStyle(3, accent, 1);
+    graphics.strokeCircle(gauntletX, gauntletY, 8);
+    graphics.lineStyle(3, 0x36e6a0, 0.5);
+    graphics.lineBetween(centerX - 12 * facing, feet - 72, centerX - (38 + Math.abs(run)) * facing, feet - 64);
+  }
+
+  private drawOrin(
+    graphics: Phaser.GameObjects.Graphics,
+    x: number,
+    feet: number,
+    facing: number,
+    run: number,
+    attack: number,
+    tilt: number,
+    accent: number,
+  ): void {
+    const centerX = x + tilt * 0.14;
+    graphics.lineStyle(9, 0x16080b, 1);
+    graphics.lineBetween(centerX - 12, feet - 27, centerX - 16 + run * 0.45, feet);
+    graphics.lineBetween(centerX + 12, feet - 27, centerX + 16 - run * 0.45, feet);
+    graphics.fillStyle(0x251117, 1);
+    graphics.fillRoundedRect(centerX - 23, feet - 73, 46, 48, 11);
+    graphics.fillStyle(0x641824, 1);
+    graphics.fillTriangle(centerX - 28, feet - 68, centerX + 24, feet - 68, centerX - 4 * facing, feet - 20);
+    graphics.fillStyle(accent, 1);
+    graphics.fillCircle(centerX, feet - 84, 14);
+    graphics.fillStyle(0xbec5ce, 1);
+    graphics.fillTriangle(centerX - 14, feet - 91, centerX + 13, feet - 94, centerX + 3 * facing, feet - 103);
+    const gauntletX = centerX + (31 + attack * 0.8) * facing;
+    const gauntletY = feet - 56 - attack * 0.38;
+    graphics.lineStyle(9, 0x2b1118, 1);
+    graphics.lineBetween(centerX + 15 * facing, feet - 59, gauntletX, gauntletY);
+    graphics.fillStyle(0x130b0f, 1);
+    graphics.fillCircle(gauntletX, gauntletY, 15);
+    graphics.lineStyle(4, 0xff4d5f, 1);
+    graphics.strokeCircle(gauntletX, gauntletY, 11);
+    graphics.fillStyle(accent, 0.9);
+    graphics.fillCircle(gauntletX + facing * 3, gauntletY - 2, 4);
   }
 
   private drawProjectiles(): void {

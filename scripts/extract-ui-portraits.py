@@ -22,6 +22,8 @@ SOURCE_SPECS = {
     "mira": (ROOT / "artifacts" / "sprites" / "all-fighters" / "mira-transparent-hires.png", (4, 8, 8, 6, 3, 5)),
     "bram": (ROOT / "artifacts" / "sprites" / "all-fighters" / "bram-transparent-hires.png", (4, 8, 8, 6, 3, 5)),
     "suri": (ROOT / "artifacts" / "sprites" / "all-fighters" / "suri-transparent-hires.png", (4, 8, 8, 6, 3, 6)),
+    "juno": (ROOT / "artifacts" / "sprites" / "new-fighters" / "juno-transparent-hires.png", (4, 8, 8, 6, 3, 6)),
+    "orin": (ROOT / "artifacts" / "sprites" / "new-fighters" / "orin-transparent-hires.png", (4, 8, 8, 6, 3, 6)),
 }
 
 

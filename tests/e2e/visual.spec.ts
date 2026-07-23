@@ -20,8 +20,8 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
     await page.locator('[data-action="quick"]').click();
     await expect(page.locator('.fighter-grid')).toBeVisible();
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'character-select.png') });
-    await page.getByTestId('fighter-kade').click();
-    await page.getByTestId('fighter-mira').click();
+    await page.getByTestId('fighter-juno').click();
+    await page.getByTestId('fighter-orin').click();
     await page.locator('[data-action="fighters-next"]').click();
     await page.getByTestId('stage-vector-spire').click();
     await page.locator('[data-action="stages-next"]').click();

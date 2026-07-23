@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rift-forge-v9';
+const CACHE_NAME = 'rift-forge-v10';
 const CORE = [
   './manifest.webmanifest',
   './icons/icon.svg',
@@ -7,10 +7,14 @@ const CORE = [
   './assets/fighters/mira-spritesheet.png',
   './assets/fighters/bram-spritesheet.png',
   './assets/fighters/suri-spritesheet.png',
+  './assets/fighters/juno-spritesheet.png',
+  './assets/fighters/orin-spritesheet.png',
   './assets/portraits/kade-portrait.png',
   './assets/portraits/mira-portrait.png',
   './assets/portraits/bram-portrait.png',
   './assets/portraits/suri-portrait.png',
+  './assets/portraits/juno-portrait.png',
+  './assets/portraits/orin-portrait.png',
   './assets/stages/vector-spire-bg.webp',
   './assets/stages/drift-garden-bg.webp',
   './assets/ui/rift-forge-background.webp',

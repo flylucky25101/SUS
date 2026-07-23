@@ -1,5 +1,5 @@
 export type Language = 'ko' | 'en';
-export type FighterId = 'kade' | 'mira' | 'bram' | 'suri';
+export type FighterId = 'kade' | 'mira' | 'bram' | 'suri' | 'juno' | 'orin';
 export type FighterInstanceId = 'p1' | 'p2';
 export type FighterRole = 'vanguard' | 'rush' | 'tank' | 'control';
 export type Difficulty = 'easy' | 'normal' | 'hard';
