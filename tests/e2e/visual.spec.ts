@@ -29,6 +29,8 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
     await expect(page.locator('[data-countdown]')).toHaveClass(/is-hidden/, { timeout: 12_000 });
     await page.waitForTimeout(400);
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'combat.png') });
+    await page.waitForFunction(() => document.querySelector('[data-game-shell]')?.hasAttribute('data-impact') === true, undefined, { timeout: 20_000 });
+    await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'combat-impact.png') });
     await page.keyboard.press('Escape');
     await expect(page.locator('.pause-card')).toBeVisible();
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'pause.png') });

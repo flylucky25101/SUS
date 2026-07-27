@@ -71,6 +71,7 @@ export class AudioSystem {
       oscillator.disconnect();
       gain.disconnect();
     }, { once: true });
+    if (cue === 'hit' || cue === 'heavy') this.playImpactLayer(context, now, cue, strength);
   }
 
   vibrate(pattern: number | readonly number[]): void {
@@ -122,6 +123,29 @@ export class AudioSystem {
     oscillator.connect(gain).connect(context.destination);
     oscillator.start(now);
     oscillator.stop(now + 0.34);
+    oscillator.addEventListener('ended', () => {
+      oscillator.disconnect();
+      gain.disconnect();
+    }, { once: true });
+  }
+
+  private playImpactLayer(context: AudioContext, now: number, cue: 'hit' | 'heavy', strength: number): void {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const heavy = cue === 'heavy';
+    const duration = heavy ? 0.2 : 0.055;
+    oscillator.type = heavy ? 'sine' : 'triangle';
+    oscillator.frequency.setValueAtTime(heavy ? 58 : 680, now);
+    oscillator.frequency.exponentialRampToValueAtTime(heavy ? 29 : 170, now + duration);
+    const peak = (heavy ? 0.26 : 0.12)
+      * this.settings.sfxVolume
+      * Math.min(1.35, Math.max(0.25, strength));
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), now + (heavy ? 0.012 : 0.003));
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.01);
     oscillator.addEventListener('ended', () => {
       oscillator.disconnect();
       gain.disconnect();

@@ -42,7 +42,20 @@ interface EffectParticle {
   kind: 'spark' | 'trail' | 'dust' | 'ring';
 }
 
-const PARTICLE_CAPACITY = 96;
+interface ImpactBurst {
+  x: number;
+  y: number;
+  direction: -1 | 1;
+  color: number;
+  power: number;
+  life: number;
+  maximumLife: number;
+  holdFrames: number;
+  strong: boolean;
+}
+
+const PARTICLE_CAPACITY = 120;
+const IMPACT_CAPACITY = 12;
 const FIGHTER_SPRITE_URLS: Readonly<Record<FighterState['definitionId'], string>> = Object.freeze({
   kade: './assets/fighters/kade-spritesheet.png',
   mira: './assets/fighters/mira-spritesheet.png',
@@ -87,11 +100,16 @@ export class ArenaScene extends Phaser.Scene {
   private lastCountdownValue = -1;
   private backgroundGraphics!: Phaser.GameObjects.Graphics;
   private stageGraphics!: Phaser.GameObjects.Graphics;
+  private lightingGraphics!: Phaser.GameObjects.Graphics;
   private projectileGraphics!: Phaser.GameObjects.Graphics;
   private effectGraphics!: Phaser.GameObjects.Graphics;
   private debugGraphics!: Phaser.GameObjects.Graphics;
   private fighterGraphics!: Record<FighterInstanceId, Phaser.GameObjects.Graphics>;
   private particles: EffectParticle[] = [];
+  private impactBursts: ImpactBurst[] = [];
+  private cameraZoomPunch = 0;
+  private cameraImpactX = 0;
+  private cameraImpactY = 0;
   private lastHudTick = -1;
   private fighterSpriteAnimators: Partial<Record<FighterInstanceId, SpriteAnimator>> = {};
   private fighterSpriteTracking: Record<FighterInstanceId, FighterSpriteTracking> = {
@@ -112,8 +130,9 @@ export class ArenaScene extends Phaser.Scene {
   create(): void {
     this.backgroundGraphics = this.add.graphics().setDepth(-20);
     this.stageGraphics = this.add.graphics().setDepth(-5);
+    this.lightingGraphics = this.add.graphics().setDepth(2).setBlendMode(Phaser.BlendModes.ADD);
     this.projectileGraphics = this.add.graphics().setDepth(6);
-    this.effectGraphics = this.add.graphics().setDepth(12);
+    this.effectGraphics = this.add.graphics().setDepth(12).setBlendMode(Phaser.BlendModes.ADD);
     this.debugGraphics = this.add.graphics().setDepth(20);
     this.fighterGraphics = {
       p1: this.add.graphics().setDepth(4),
@@ -287,6 +306,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private renderWorld(): void {
     this.drawStage();
+    this.drawLighting();
     for (const fighter of this.world.fighters) this.drawFighter(fighter, this.fighterGraphics[fighter.id]);
     this.drawProjectiles();
     this.drawParticles();
@@ -352,12 +372,21 @@ export class ArenaScene extends Phaser.Scene {
       const platform = platformAtTick(source, this.world.motionTick, this.world.options.hazards);
       const primary = stage.theme === 'spire' ? 0x1dd4ef : 0x73e2b8;
       const surface = stage.theme === 'spire' ? 0x202d3d : 0x293746;
+      const side = stage.theme === 'spire' ? 0x101925 : 0x14231f;
+      graphics.fillStyle(0x000000, 0.34);
+      graphics.fillRoundedRect(platform.x + 7, platform.y + 13, platform.width, platform.height + 15, platform.id === 'main' ? 12 : 7);
       graphics.fillStyle(primary, 0.12);
       graphics.fillRoundedRect(platform.x - 8, platform.y - 8, platform.width + 16, platform.height + 20, 12);
+      graphics.fillStyle(side, 0.98);
+      graphics.fillRoundedRect(platform.x, platform.y + 8, platform.width, platform.height + 10, platform.id === 'main' ? 12 : 7);
       graphics.fillStyle(surface, 1);
       graphics.fillRoundedRect(platform.x, platform.y, platform.width, platform.height, platform.id === 'main' ? 12 : 7);
+      graphics.fillStyle(0xffffff, 0.055);
+      graphics.fillRoundedRect(platform.x + 7, platform.y + 5, platform.width - 14, Math.max(3, platform.height * 0.22), 3);
       graphics.fillStyle(primary, 0.9);
       graphics.fillRoundedRect(platform.x + 4, platform.y, platform.width - 8, 4, 2);
+      graphics.lineStyle(2, 0x000000, 0.34);
+      graphics.lineBetween(platform.x + 9, platform.y + platform.height, platform.x + platform.width - 9, platform.y + platform.height);
       graphics.lineStyle(1, primary, 0.28);
       for (let x = platform.x + 24; x < platform.x + platform.width - 12; x += 52) {
         graphics.lineBetween(x, platform.y + 9, x + 17, platform.y + platform.height - 7);
@@ -374,6 +403,43 @@ export class ArenaScene extends Phaser.Scene {
     graphics.lineStyle(2, stage.theme === 'spire' ? 0x23b7e2 : 0x65d3a9, 0.22);
     graphics.lineBetween(340, 670, 640, 620);
     graphics.lineBetween(940, 670, 640, 620);
+  }
+
+  private drawLighting(): void {
+    const graphics = this.lightingGraphics;
+    const stage = getStage(this.world.options.stageId);
+    const stageColor = stage.theme === 'spire' ? 0x35d9ff : 0x9d75ff;
+    graphics.clear();
+    graphics.fillStyle(stageColor, 0.025);
+    graphics.fillTriangle(290, 40, 530, 610, 70, 610);
+    graphics.fillTriangle(990, 40, 1210, 610, 750, 610);
+    graphics.fillStyle(stageColor, 0.045);
+    graphics.fillEllipse(640, 576, 760, 72);
+
+    for (const fighter of this.world.fighters) {
+      const definition = getFighter(fighter.definitionId);
+      const centerY = fighter.position.y - definition.stats.height * 0.48;
+      const pulse = 0.018 + Math.abs(Math.sin(this.world.motionTick * 0.045 + (fighter.id === 'p1' ? 0 : 1.7))) * 0.015;
+      graphics.fillStyle(definition.color, pulse);
+      graphics.fillEllipse(fighter.position.x, centerY, definition.stats.width * 2.7, definition.stats.height * 1.65);
+      if (fighter.status === 'attack' || fighter.status === 'charge') {
+        graphics.lineStyle(2, definition.accent, 0.16);
+        graphics.strokeCircle(fighter.position.x, centerY, definition.stats.height * 0.72);
+      }
+    }
+  }
+
+  private fighterShadowY(fighter: FighterState): number {
+    const definition = getFighter(fighter.definitionId);
+    const platforms = getStage(this.world.options.stageId).platforms
+      .map((platform) => platformAtTick(platform, this.world.motionTick, this.world.options.hazards))
+      .filter((platform) => (
+        platform.y >= fighter.position.y - 5
+        && fighter.position.x + definition.stats.width * 0.35 >= platform.x
+        && fighter.position.x - definition.stats.width * 0.35 <= platform.x + platform.width
+      ))
+      .sort((first, second) => first.y - second.y);
+    return platforms[0]?.y ?? fighter.position.y + 6;
   }
 
   private drawFighter(fighter: FighterState, graphics: Phaser.GameObjects.Graphics): void {
@@ -396,8 +462,18 @@ export class ArenaScene extends Phaser.Scene {
     const footOffset = (PLAYER_SPRITE_FRAME_SIZE - PLAYER_SPRITE_FOOT_BASELINE) * (displaySize / PLAYER_SPRITE_FRAME_SIZE);
     graphics.clear();
     graphics.setAlpha(alpha);
-    graphics.fillStyle(0x000000, 0.32);
-    graphics.fillEllipse(x + facing * 3, fighter.position.y + 4, definition.stats.width * 1.45, 13);
+    const shadowY = this.fighterShadowY(fighter);
+    const altitude = clamp(shadowY - fighter.position.y, 0, 260);
+    const shadowScale = clamp(1 - altitude / 430, 0.48, 1);
+    const shadowAlpha = clamp(0.38 - altitude / 920, 0.14, 0.38);
+    graphics.fillStyle(0x000000, shadowAlpha * 0.34);
+    graphics.fillEllipse(x + facing * 6, shadowY + 5, definition.stats.width * 2.25 * shadowScale, 25 * shadowScale);
+    graphics.fillStyle(0x000000, shadowAlpha);
+    graphics.fillEllipse(x + facing * 3, shadowY + 2, definition.stats.width * 1.5 * shadowScale, 12 * shadowScale);
+    if (altitude < 24) {
+      graphics.fillStyle(definition.color, 0.11);
+      graphics.fillEllipse(x, shadowY, definition.stats.width * 1.05, 5);
+    }
     const glowStrength = fighter.status === 'attack' || fighter.status === 'charge' ? 0.16 : 0.075;
     graphics.fillStyle(definition.color, glowStrength);
     graphics.fillEllipse(
@@ -405,6 +481,13 @@ export class ArenaScene extends Phaser.Scene {
       feet - definition.stats.height * 0.5,
       definition.stats.width * 1.7,
       definition.stats.height * 1.08,
+    );
+    graphics.lineStyle(Math.max(2, definition.stats.width * 0.055), definition.accent, fighter.status === 'hurt' ? 0.2 : 0.09);
+    graphics.lineBetween(
+      x - definition.stats.width * 0.48,
+      feet - definition.stats.height * 0.9,
+      x - definition.stats.width * 0.24,
+      feet - definition.stats.height * 0.18,
     );
     const spriteDrawn = this.fighterSpriteAnimators[fighter.id]?.draw({
       x,
@@ -643,12 +726,24 @@ export class ArenaScene extends Phaser.Scene {
     for (const projectile of this.world.projectiles) {
       const owner = this.world.fighters.find((fighter) => fighter.id === projectile.ownerId);
       const color = owner === undefined ? 0xffffff : getFighter(owner.definitionId).color;
-      graphics.lineStyle(Math.max(2, projectile.radius * 0.5), color, 0.18);
-      graphics.lineBetween(projectile.position.x - projectile.velocity.x * 3, projectile.position.y - projectile.velocity.y * 3, projectile.position.x, projectile.position.y);
-      graphics.fillStyle(color, 0.25);
-      graphics.fillCircle(projectile.position.x, projectile.position.y, projectile.radius * 1.65);
+      const speed = Math.hypot(projectile.velocity.x, projectile.velocity.y);
+      graphics.lineStyle(Math.max(4, projectile.radius * 1.25), 0x000000, 0.24);
+      graphics.lineBetween(
+        projectile.position.x - projectile.velocity.x * 4.2,
+        projectile.position.y - projectile.velocity.y * 4.2 + 4,
+        projectile.position.x,
+        projectile.position.y + 4,
+      );
+      graphics.lineStyle(Math.max(2, projectile.radius * 0.72), color, 0.3);
+      graphics.lineBetween(projectile.position.x - projectile.velocity.x * 4, projectile.position.y - projectile.velocity.y * 4, projectile.position.x, projectile.position.y);
+      graphics.lineStyle(Math.max(1, projectile.radius * 0.26), 0xffffff, 0.5);
+      graphics.lineBetween(projectile.position.x - projectile.velocity.x * 2.2, projectile.position.y - projectile.velocity.y * 2.2, projectile.position.x, projectile.position.y);
+      graphics.fillStyle(color, 0.17);
+      graphics.fillCircle(projectile.position.x, projectile.position.y, projectile.radius * (1.85 + Math.min(0.4, speed * 0.02)));
       graphics.fillStyle(color, 0.95);
       graphics.fillCircle(projectile.position.x, projectile.position.y, projectile.radius);
+      graphics.lineStyle(2, 0xffffff, 0.62);
+      graphics.strokeCircle(projectile.position.x, projectile.position.y, projectile.radius * 0.72);
       graphics.fillStyle(0xffffff, 0.9);
       graphics.fillCircle(projectile.position.x - projectile.radius * 0.25, projectile.position.y - projectile.radius * 0.25, projectile.radius * 0.32);
     }
@@ -686,13 +781,12 @@ export class ArenaScene extends Phaser.Scene {
       case 'hit':
         this.launch.audio.play('hit');
         this.launch.audio.vibrate(18);
-        this.emitParticles(event.position.x, event.position.y, 0xffffff, 10, 'spark');
+        this.emitImpact(event, false);
         break;
       case 'strong-hit':
         this.launch.audio.play('heavy', Math.min(1.3, event.value / 10));
         this.launch.audio.vibrate([28, 18, 35]);
-        this.emitParticles(event.position.x, event.position.y, 0xffdf8a, 18, 'spark');
-        if (this.launch.getSettings().screenShake && !this.launch.getSettings().reducedMotion) this.cameras.main.shake(110, Math.min(0.012, event.value * 0.00065));
+        this.emitImpact(event, true);
         break;
       case 'dodge':
         this.launch.audio.play('dodge');
@@ -708,6 +802,8 @@ export class ArenaScene extends Phaser.Scene {
         this.launch.audio.play('ringout');
         this.launch.audio.vibrate([45, 20, 70]);
         this.emitParticles(event.position.x, event.position.y, 0xffffff, 26, 'trail');
+        this.cameraZoomPunch = Math.max(this.cameraZoomPunch, 0.075);
+        if (!this.launch.getSettings().reducedMotion) this.cameras.main.flash(130, 214, 238, 255, false);
         break;
       case 'match-end':
         this.launch.audio.play('victory');
@@ -715,6 +811,48 @@ export class ArenaScene extends Phaser.Scene {
       case 'respawn':
         this.emitParticles(event.position.x, event.position.y, 0x8deaff, 12, 'ring');
         break;
+    }
+  }
+
+  private emitImpact(event: CombatEvent, strong: boolean): void {
+    const actor = this.world.fighters.find((fighter) => fighter.id === event.actorId);
+    const target = event.targetId === null
+      ? undefined
+      : this.world.fighters.find((fighter) => fighter.id === event.targetId);
+    const color = actor === undefined ? 0xffffff : getFighter(actor.definitionId).color;
+    const direction: -1 | 1 = actor === undefined
+      ? 1
+      : (target?.position.x ?? event.position.x) >= actor.position.x ? 1 : -1;
+    const power = clamp(event.value / 10, 0.48, strong ? 1.55 : 1.05);
+    const maximumLife = strong ? 22 : 15;
+    this.impactBursts.push({
+      x: event.position.x,
+      y: event.position.y,
+      direction,
+      color,
+      power,
+      life: maximumLife,
+      maximumLife,
+      holdFrames: strong ? 3 : 1,
+      strong,
+    });
+    if (this.impactBursts.length > IMPACT_CAPACITY) this.impactBursts.shift();
+    this.emitParticles(event.position.x, event.position.y, color, strong ? 24 : 13, 'spark');
+    this.emitParticles(event.position.x, event.position.y, 0xffffff, strong ? 10 : 5, 'trail');
+    if (strong) this.emitParticles(event.position.x, event.position.y, 0xffe8a6, 3, 'ring');
+
+    const settings = this.launch.getSettings();
+    if (!settings.reducedMotion) {
+      this.cameraZoomPunch = Math.max(this.cameraZoomPunch, strong ? 0.052 * power : 0.016 * power);
+      this.cameraImpactX = direction * (strong ? -18 : -7) * power;
+      this.cameraImpactY = strong ? 7 * power : 2;
+      if (settings.screenShake) {
+        this.cameras.main.shake(
+          strong ? 125 : 58,
+          strong ? Math.min(0.014, event.value * 0.00072) : Math.min(0.0035, event.value * 0.0003),
+        );
+      }
+      if (strong) this.cameras.main.flash(68, 255, 235, 196, false);
     }
   }
 
@@ -740,6 +878,11 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private updateParticles(): void {
+    this.impactBursts = this.impactBursts.filter((impact) => {
+      if (impact.holdFrames > 0) impact.holdFrames -= 1;
+      else impact.life -= 1;
+      return impact.life > 0;
+    });
     for (const particle of this.particles) {
       if (!particle.active) continue;
       particle.life -= 1;
@@ -757,6 +900,50 @@ export class ArenaScene extends Phaser.Scene {
   private drawParticles(): void {
     const graphics = this.effectGraphics;
     graphics.clear();
+    for (const impact of this.impactBursts) {
+      const ratio = impact.life / impact.maximumLife;
+      const progress = 1 - ratio;
+      const core = (impact.strong ? 18 : 11) * impact.power;
+      const radius = core + progress * (impact.strong ? 72 : 42) * impact.power;
+      graphics.lineStyle(Math.max(1, 5 * ratio), 0xffffff, ratio * (impact.strong ? 0.9 : 0.68));
+      graphics.strokeCircle(impact.x, impact.y, radius * 0.46);
+      graphics.lineStyle(Math.max(1, 3 * ratio), impact.color, ratio * 0.82);
+      graphics.strokeEllipse(impact.x, impact.y, radius * 1.35, radius * 0.72);
+
+      const rayCount = impact.strong ? 12 : 8;
+      for (let index = 0; index < rayCount; index += 1) {
+        const spread = (index / Math.max(1, rayCount - 1) - 0.5) * Math.PI * 1.45;
+        const angle = (impact.direction > 0 ? 0 : Math.PI) + spread;
+        const start = core * (0.45 + (index % 3) * 0.12);
+        const length = radius * (0.75 + (index % 4) * 0.13);
+        graphics.lineStyle(Math.max(1, (impact.strong ? 5 : 3) * ratio), index % 3 === 0 ? 0xffffff : impact.color, ratio * 0.86);
+        graphics.lineBetween(
+          impact.x + Math.cos(angle) * start,
+          impact.y + Math.sin(angle) * start * 0.62,
+          impact.x + Math.cos(angle) * length,
+          impact.y + Math.sin(angle) * length * 0.62,
+        );
+      }
+      graphics.fillStyle(impact.color, ratio * 0.52);
+      graphics.fillEllipse(impact.x - impact.direction * progress * 6, impact.y, core * 2.8, core * 1.65);
+      graphics.fillStyle(0xffffff, ratio * 0.95);
+      graphics.fillTriangle(
+        impact.x - core * impact.direction,
+        impact.y,
+        impact.x,
+        impact.y - core * 0.75,
+        impact.x + core * 1.3 * impact.direction,
+        impact.y,
+      );
+      graphics.fillTriangle(
+        impact.x - core * impact.direction,
+        impact.y,
+        impact.x,
+        impact.y + core * 0.75,
+        impact.x + core * 1.3 * impact.direction,
+        impact.y,
+      );
+    }
     for (const particle of this.particles) {
       if (!particle.active) continue;
       const ratio = particle.life / particle.maximumLife;
@@ -785,14 +972,18 @@ export class ArenaScene extends Phaser.Scene {
     const baseZoom = Math.min(width / GAME_CONFIG.worldWidth, height / GAME_CONFIG.worldHeight);
     const distance = Math.abs(first.position.x - second.position.x) + Math.abs(first.position.y - second.position.y) * 0.42;
     const dynamicZoom = clamp(1.03 - distance / 1900, GAME_CONFIG.cameraMinZoom, GAME_CONFIG.cameraMaxZoom);
-    const targetZoom = baseZoom * dynamicZoom;
+    const targetZoom = baseZoom * dynamicZoom * (1 + this.cameraZoomPunch);
     camera.zoom = Phaser.Math.Linear(camera.zoom, targetZoom, clamp(delta / 180, 0.04, 0.18));
-    const targetX = (first.position.x + second.position.x) / 2;
-    const targetY = clamp((first.position.y + second.position.y) / 2 - 78, 250, 430);
+    const targetX = (first.position.x + second.position.x) / 2 + this.cameraImpactX;
+    const targetY = clamp((first.position.y + second.position.y) / 2 - 78 + this.cameraImpactY, 250, 430);
     const viewCenter = camera.midPoint;
     camera.centerOn(
       Phaser.Math.Linear(viewCenter.x, targetX, 0.075),
       Phaser.Math.Linear(viewCenter.y, targetY, 0.075),
     );
+    const decay = clamp(delta / 115, 0.06, 0.24);
+    this.cameraZoomPunch = Phaser.Math.Linear(this.cameraZoomPunch, 0, decay);
+    this.cameraImpactX = Phaser.Math.Linear(this.cameraImpactX, 0, decay);
+    this.cameraImpactY = Phaser.Math.Linear(this.cameraImpactY, 0, decay);
   }
 }

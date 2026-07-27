@@ -575,6 +575,7 @@ export class RiftForgeApp {
   }
 
   private recordCombatEvent(event: CombatEvent): void {
+    if (event.type === 'hit' || event.type === 'strong-hit' || event.type === 'ringout') this.pulseCombatUi(event);
     if (event.type !== 'hit' && event.type !== 'strong-hit' && event.type !== 'ringout' && event.type !== 'respawn') return;
     const line = `T${event.tick} ${event.actorId.toUpperCase()} ${event.type.toUpperCase()} ${event.moveId?.split('.').at(-1) ?? ''}`;
     this.combatLog.unshift(line);
@@ -582,6 +583,40 @@ export class RiftForgeApp {
     if (this.hud?.combatLog !== null && this.hud?.combatLog !== undefined) {
       this.hud.combatLog.innerHTML = this.combatLog.map((entry) => `<li>${entry}</li>`).join('');
     }
+  }
+
+  private pulseCombatUi(event: CombatEvent): void {
+    const shell = this.root.querySelector<HTMLElement>('[data-game-shell]');
+    if (shell === null) return;
+    const impact = event.type === 'strong-hit' ? 'heavy' : event.type === 'ringout' ? 'ringout' : 'hit';
+    const token = `${event.tick}-${event.actorId}-${impact}`;
+    shell.removeAttribute('data-impact');
+    void shell.offsetWidth;
+    shell.dataset.impact = impact;
+    shell.dataset.impactToken = token;
+    window.setTimeout(() => {
+      if (shell.dataset.impactToken !== token) return;
+      shell.removeAttribute('data-impact');
+      shell.removeAttribute('data-impact-token');
+    }, impact === 'ringout' ? 390 : impact === 'heavy' ? 240 : 150);
+
+    if (event.targetId === null || this.hud === null) return;
+    const damage = event.targetId === 'p1' ? this.hud.p1Damage : this.hud.p2Damage;
+    const panel = damage.closest<HTMLElement>('.fighter-hud');
+    const travel = event.targetId === 'p1' ? -7 : 7;
+    const duration = impact === 'heavy' ? 240 : 150;
+    damage.getAnimations().forEach((animation) => animation.cancel());
+    panel?.getAnimations().forEach((animation) => animation.cancel());
+    damage.animate([
+      { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' },
+      { transform: `translateX(${travel}px) scale(${impact === 'heavy' ? 1.28 : 1.16})`, filter: 'brightness(2.2)' },
+      { transform: 'translateX(0) scale(1)', filter: 'brightness(1)' },
+    ], { duration, easing: 'cubic-bezier(.2,.85,.25,1)' });
+    panel?.animate([
+      { transform: 'translate3d(0,0,0)' },
+      { transform: `translate3d(${travel * 0.7}px,${impact === 'heavy' ? 2 : 0}px,0)` },
+      { transform: 'translate3d(0,0,0)' },
+    ], { duration, easing: 'cubic-bezier(.2,.8,.25,1)' });
   }
 
   private pauseGame(): void {
