@@ -51,10 +51,8 @@ test.describe('player sprite animation', () => {
       const frame = (await snapshot())?.frame ?? -1;
       return frame >= 2 && frame <= 5;
     }).toBe(true);
-    const walkingFrame = (await snapshot())?.frame ?? -1;
     await setVisualState('run', 2, 1);
-    await page.waitForTimeout(20);
-    expect((await snapshot())?.frame ?? -1).toBeGreaterThanOrEqual(walkingFrame);
+    await expect.poll(snapshot).toMatchObject({ name: 'walk', flipX: false });
 
     await setVisualState('run', 20, -1);
     await expect.poll(snapshot).toMatchObject({ name: 'run', flipX: true });

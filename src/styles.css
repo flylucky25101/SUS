@@ -487,7 +487,7 @@ button:disabled { opacity: .36; cursor: not-allowed; }
 
 .game-shell { touch-action: none; background: #080b12; }
 .game-canvas, .game-canvas canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
-.game-canvas canvas { filter: contrast(1.08) saturate(1.12) brightness(1.02); }
+.game-canvas canvas { image-rendering: auto; }
 .game-canvas { opacity: 0; transition: opacity .25s ease; }.game-shell.is-ready .game-canvas { opacity: 1; }
 .game-vignette {
   position: absolute;

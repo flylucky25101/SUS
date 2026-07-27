@@ -69,12 +69,14 @@ const STAGE_BACKGROUND_URLS: Readonly<Record<MatchOptions['stageId'], string>> =
   'drift-garden': './assets/stages/drift-garden-bg.webp',
 });
 const PLAYER_SPRITE_FRAME_SIZE = 64;
-const PLAYER_SPRITE_DISPLAY_SIZE = 128;
+const PLAYER_SPRITE_DISPLAY_SIZE = 140;
 const PLAYER_SPRITE_REFERENCE_HEIGHT = 86;
 const PLAYER_SPRITE_FOOT_BASELINE = 60;
-const COMPACT_FIGHTER_VISUAL_SCALE = 1.75;
+const COMPACT_FIGHTER_VISUAL_SCALE = 1.9;
 const COMPACT_VIEWPORT_MAX_WIDTH = 960;
 const COMPACT_VIEWPORT_MAX_HEIGHT = 520;
+const CAMERA_COVER_OVERSCAN = 1.03;
+const STAGE_BACKGROUND_OVERSCAN = 1.5;
 
 interface FighterSpriteTracking {
   animation: SpriteAnimationName;
@@ -356,7 +358,10 @@ export class ArenaScene extends Phaser.Scene {
       texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
       this.stageBackgroundTextureKey = textureKey;
       this.stageBackgroundImage = this.add.image(GAME_CONFIG.worldWidth / 2, GAME_CONFIG.worldHeight / 2, textureKey)
-        .setDisplaySize(GAME_CONFIG.worldWidth, GAME_CONFIG.worldHeight)
+        .setDisplaySize(
+          GAME_CONFIG.worldWidth * STAGE_BACKGROUND_OVERSCAN,
+          GAME_CONFIG.worldHeight * STAGE_BACKGROUND_OVERSCAN,
+        )
         .setDepth(-19)
         .setAlpha(0.76);
     };
@@ -969,9 +974,12 @@ export class ArenaScene extends Phaser.Scene {
     const camera = this.cameras.main;
     const width = Math.max(1, this.scale.width);
     const height = Math.max(1, this.scale.height);
-    const baseZoom = Math.min(width / GAME_CONFIG.worldWidth, height / GAME_CONFIG.worldHeight);
+    // Fill the viewport before applying fighter-distance framing. Using a contain
+    // scale here left wide phones looking at empty space outside the 16:9 arena.
+    const baseZoom = Math.max(width / GAME_CONFIG.worldWidth, height / GAME_CONFIG.worldHeight)
+      * CAMERA_COVER_OVERSCAN;
     const distance = Math.abs(first.position.x - second.position.x) + Math.abs(first.position.y - second.position.y) * 0.42;
-    const dynamicZoom = clamp(1.03 - distance / 1900, GAME_CONFIG.cameraMinZoom, GAME_CONFIG.cameraMaxZoom);
+    const dynamicZoom = clamp(1.18 - distance / 2600, GAME_CONFIG.cameraMinZoom, GAME_CONFIG.cameraMaxZoom);
     const targetZoom = baseZoom * dynamicZoom * (1 + this.cameraZoomPunch);
     camera.zoom = Phaser.Math.Linear(camera.zoom, targetZoom, clamp(delta / 180, 0.04, 0.18));
     const targetX = (first.position.x + second.position.x) / 2 + this.cameraImpactX;

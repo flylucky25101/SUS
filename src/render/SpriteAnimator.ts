@@ -34,6 +34,7 @@ export class SpriteAnimator {
   private readonly timeline: SpriteAnimationTimeline;
   private readonly textureKey: string;
   private sprite: Phaser.GameObjects.Image | null = null;
+  private outlineSprite: Phaser.GameObjects.Image | null = null;
   private failed = false;
   private destroyed = false;
   private lastFlipX = false;
@@ -72,19 +73,30 @@ export class SpriteAnimator {
     const snapshot = this.timeline.snapshot();
     const definition = this.animations[snapshot.name];
     const frame = definition.row * this.columns + snapshot.frame;
+    const depth = options.depth ?? 4;
+    const alpha = options.alpha ?? 1;
     this.lastFlipX = options.flipX ?? false;
+    this.outlineSprite
+      ?.setFrame(frame)
+      .setPosition(options.x, options.y)
+      .setDisplaySize(options.width * 1.075, options.height * 1.075)
+      .setFlipX(this.lastFlipX)
+      .setAlpha(alpha * 0.78)
+      .setDepth(depth - 0.02)
+      .setVisible(true);
     this.sprite
       .setFrame(frame)
       .setPosition(options.x, options.y)
       .setDisplaySize(options.width, options.height)
       .setFlipX(this.lastFlipX)
-      .setAlpha(options.alpha ?? 1)
-      .setDepth(options.depth ?? 4)
+      .setAlpha(alpha)
+      .setDepth(depth)
       .setVisible(true);
     return true;
   }
 
   hide(): void {
+    this.outlineSprite?.setVisible(false);
     this.sprite?.setVisible(false);
   }
 
@@ -99,6 +111,8 @@ export class SpriteAnimator {
 
   destroy(): void {
     this.destroyed = true;
+    this.outlineSprite?.destroy();
+    this.outlineSprite = null;
     this.sprite?.destroy();
     this.sprite = null;
     if (this.scene.textures.exists(this.textureKey)) this.scene.textures.remove(this.textureKey);
@@ -125,6 +139,10 @@ export class SpriteAnimator {
         return;
       }
       texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      this.outlineSprite = this.scene.add.image(0, 0, this.textureKey, 0)
+        .setOrigin(0.5, 1)
+        .setTintFill(0x02060a)
+        .setVisible(false);
       this.sprite = this.scene.add.image(0, 0, this.textureKey, 0).setOrigin(0.5, 1).setVisible(false);
     };
     image.onerror = () => {

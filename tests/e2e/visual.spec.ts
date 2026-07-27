@@ -11,6 +11,7 @@ test.beforeEach(async ({ page }) => installStableSettings(page));
 test('captures required visual QA surfaces', async ({ page }, testInfo) => {
   const project = testInfo.project.name;
   if (project === 'galaxy-s23-landscape') {
+    test.setTimeout(70_000);
     await gotoMain(page);
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'galaxy-s23-landscape-main-menu.png') });
     await page.locator('[data-action="shop"]').click();

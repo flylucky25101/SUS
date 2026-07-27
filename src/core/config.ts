@@ -35,8 +35,8 @@ export const GAME_CONFIG = Object.freeze({
   platformDropFrames: 11,
   projectileLimitGlobal: 8,
   cameraMinZoom: 0.72,
-  cameraMaxZoom: 1.05,
-  renderDprCap: 2,
+  cameraMaxZoom: 1.16,
+  renderDprCap: 2.5,
 });
 
 export type GameConfig = typeof GAME_CONFIG;

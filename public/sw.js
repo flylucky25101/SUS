@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rift-forge-v13';
+const CACHE_NAME = 'rift-forge-v14';
 const CORE = [
   './manifest.webmanifest',
   './icons/icon.svg',

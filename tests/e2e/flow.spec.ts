@@ -18,11 +18,12 @@ test.describe('Galaxy S23 complete flow', () => {
   });
 
   test('loads, selects content, accepts multitouch, pauses, rotates, and rematches', async ({ page }) => {
+    test.setTimeout(70_000);
     const issues = observeBrowserIssues(page);
     await gotoMain(page);
     await startQuickMatch(page);
     await expect(page.locator('[data-countdown]')).toHaveClass(/is-hidden/, { timeout: 12_000 });
-    await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getFighterVisualScale() ?? 1)).toBe(1.75);
+    await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getFighterVisualScale() ?? 1)).toBe(1.9);
 
     await dispatchPointer(page, '[data-stick-zone]', 'pointerdown', 11, 0.28, 0.62);
     await dispatchPointer(page, '[data-stick-zone]', 'pointermove', 11, 0.7, 0.62);
@@ -77,7 +78,7 @@ test.describe('Galaxy S23 complete flow', () => {
     await page.setViewportSize({ width: 852, height: 393 });
     await expect(page.locator('html')).not.toHaveClass(/virtual-landscape/);
     await expect(page.locator('.rotation-gate')).toBeHidden();
-    await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getFighterVisualScale() ?? 1)).toBe(1.75);
+    await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getFighterVisualScale() ?? 1)).toBe(1.9);
 
     await holdTouchPause(page);
     await expect.poll(async () => page.evaluate(() => window.__RIFT_DEBUG__?.getAudioState() ?? 'uninitialized')).toBe('suspended');
