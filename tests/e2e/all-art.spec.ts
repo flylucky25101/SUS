@@ -62,6 +62,11 @@ test.describe('complete illustrated art pass', () => {
     await expect(page.getByTestId('fighter-juno').locator('strong')).toBeVisible();
     await expect(page.getByTestId('fighter-orin').locator('strong')).toBeVisible();
     await page.getByTestId('fighter-juno').click();
+    await expect(page.locator('[data-action="fighters-next"]')).toBeEnabled();
+    await expect(page.locator('.fighter-assigned--p1')).toHaveText('P1');
+    await expect(page.locator('.fighter-assigned--cpu')).toHaveText('CPU');
+    const automaticCpu = await page.locator('.fighter-assigned--cpu').evaluate((badge) => badge.closest<HTMLElement>('[data-value]')?.dataset.value ?? null);
+    expect(automaticCpu).not.toBe('juno');
     await page.getByTestId('fighter-orin').click();
     await page.locator('[data-action="fighters-next"]').click();
     await page.getByTestId('stage-drift-garden').click();

@@ -51,5 +51,11 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
   } else if (project === 'desktop') {
     await gotoMain(page);
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'desktop-1280x720.png') });
+    await page.locator('[data-action="quick"]').click();
+    await expect(page.locator('.fighter-grid')).toBeVisible();
+    await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'desktop-character-select.png') });
+    await page.getByTestId('fighter-kade').click();
+    await expect(page.locator('.fighter-assigned--cpu')).toBeVisible();
+    await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'desktop-character-select-auto-cpu.png') });
   }
 });

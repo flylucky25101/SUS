@@ -277,11 +277,13 @@ export class RiftForgeApp {
       const selected = this.selection.p1 === fighter.id || this.selection.p2 === fighter.id;
       const assigned = this.selection.p1 === fighter.id ? 'P1' : this.selection.p2 === fighter.id ? 'CPU' : '';
       return `<button class="fighter-card ${selected ? 'is-selected' : ''}" style="--fighter:${colorHex(fighter.color)};--accent:${colorHex(fighter.accent)}" data-action="select-fighter" data-value="${fighter.id}" data-testid="fighter-${fighter.id}" aria-pressed="${selected}">
-        <span class="fighter-number">0${FIGHTERS.indexOf(fighter) + 1}</span><span class="fighter-assigned">${assigned}</span>
+        <span class="fighter-number">0${FIGHTERS.indexOf(fighter) + 1}</span>${assigned ? `<span class="fighter-assigned fighter-assigned--${assigned.toLowerCase()}">${assigned}</span>` : ''}
         <span class="portrait portrait--${fighter.id}" aria-hidden="true"></span>
-        <span class="fighter-role">${roleLabel(language, fighter.role)}</span><strong>${fighter.name}</strong><small>${localized(language, fighter.epithet)}</small>
-        <span class="stat-strip" aria-label="${localized(language, fighter.description)}">
-          <i style="--stat:${fighter.budget.mobility * 10}%"></i><i style="--stat:${fighter.budget.survivability * 10}%"></i><i style="--stat:${fighter.budget.range * 10}%"></i>
+        <span class="fighter-info">
+          <span class="fighter-role">${roleLabel(language, fighter.role)}</span><strong>${fighter.name}</strong><small>${localized(language, fighter.epithet)}</small>
+          <span class="stat-strip" aria-label="${localized(language, fighter.description)}">
+            <i style="--stat:${fighter.budget.mobility * 10}%"></i><i style="--stat:${fighter.budget.survivability * 10}%"></i><i style="--stat:${fighter.budget.range * 10}%"></i>
+          </span>
         </span>
       </button>`;
     }).join('');
@@ -291,8 +293,9 @@ export class RiftForgeApp {
         <div class="selection-heading"><p class="eyebrow">LOADOUT // 01</p><h2>${slotLabel}</h2>
           <div class="slot-switcher">
             <button class="${this.activeFighterSlot === 'p1' ? 'active' : ''}" data-action="choose-slot" data-value="p1"><span>P1</span>${this.selection.p1 ? getFighter(this.selection.p1).name : '—'}</button>
-            <button class="${this.activeFighterSlot === 'p2' ? 'active' : ''}" data-action="choose-slot" data-value="p2"><span>CPU</span>${this.selection.p2 ? getFighter(this.selection.p2).name : '—'}</button>
+            <button class="${this.activeFighterSlot === 'p2' ? 'active' : ''}" data-action="choose-slot" data-value="p2" data-testid="cpu-slot"><span>CPU // ${t(language, 'cpuAuto')}</span>${this.selection.p2 ? getFighter(this.selection.p2).name : t(language, 'cpuWaiting')}</button>
           </div>
+          <p class="cpu-auto-hint">${t(language, 'cpuAutoHint')}</p>
         </div>
         <div class="fighter-grid">${cards}</div>
         <button class="primary-button selection-next" data-action="fighters-next" ${canContinue ? '' : 'disabled'}>${t(language, 'next')}<span aria-hidden="true">›</span></button>
@@ -735,7 +738,12 @@ export class RiftForgeApp {
         break;
       case 'select-fighter':
         if (isFighterId(value)) {
-          this.selection[this.activeFighterSlot] = value;
+          if (this.activeFighterSlot === 'p1') {
+            this.selection.p1 = value;
+            this.selection.p2 = this.pickAutomaticCpu(value);
+          } else {
+            this.selection.p2 = value;
+          }
           this.activeFighterSlot = this.activeFighterSlot === 'p1' ? 'p2' : 'p1';
           this.renderFighterSelect();
         }
@@ -784,6 +792,13 @@ export class RiftForgeApp {
       case 'training-toggle': this.toggleTraining(value, button); break;
       case 'debug-speed': this.setDebugSpeed(value, button); break;
     }
+  }
+
+  private pickAutomaticCpu(player: FighterId): FighterId {
+    const candidates = FIGHTERS.filter((fighter) => fighter.id !== player);
+    const selected = candidates[Math.floor(Math.random() * candidates.length)];
+    if (selected === undefined) throw new Error('CPU auto-pick requires at least two fighters.');
+    return selected.id;
   }
 
   private handleInput(event: Event): void {

@@ -43,3 +43,23 @@ test('keeps landscape HUD separate from touch action controls', async ({ page },
   }
   await expectNoBrowserIssues(issues);
 });
+
+test('keeps every fighter name inside its selection card', async ({ page }) => {
+  const issues = observeBrowserIssues(page);
+  await gotoMain(page);
+  await page.locator('[data-action="quick"]').click();
+  const cards = page.locator('.fighter-card');
+  await expect(cards).toHaveCount(6);
+  for (let index = 0; index < await cards.count(); index += 1) {
+    const card = cards.nth(index);
+    const cardBox = await card.boundingBox();
+    const nameBox = await card.locator('.fighter-info > strong').boundingBox();
+    expect(cardBox, `fighter card ${index} should have a box`).not.toBeNull();
+    expect(nameBox, `fighter name ${index} should have a box`).not.toBeNull();
+    if (cardBox !== null && nameBox !== null) {
+      expect(nameBox.y).toBeGreaterThanOrEqual(cardBox.y);
+      expect(nameBox.y + nameBox.height).toBeLessThanOrEqual(cardBox.y + cardBox.height + 1);
+    }
+  }
+  await expectNoBrowserIssues(issues);
+});
