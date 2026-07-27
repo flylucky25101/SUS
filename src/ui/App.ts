@@ -23,6 +23,8 @@ type SelectionMode = Exclude<MatchMode, 'debug'>;
 type FighterSlot = 'p1' | 'p2';
 type SettingsContext = 'menu' | 'pause' | 'game';
 
+const INITIAL_RELEASE_STAGE_ID: StageDefinition['id'] = 'vector-spire';
+
 interface MatchSelection {
   mode: SelectionMode;
   p1: FighterId | null;
@@ -298,7 +300,7 @@ export class RiftForgeApp {
           <p class="cpu-auto-hint">${t(language, 'cpuAutoHint')}</p>
         </div>
         <div class="fighter-grid">${cards}</div>
-        <button class="primary-button selection-next" data-action="fighters-next" ${canContinue ? '' : 'disabled'}>${t(language, 'next')}<span aria-hidden="true">›</span></button>
+        <button class="primary-button selection-next" data-action="fighters-next" ${canContinue ? '' : 'disabled'}>${this.selection.mode === 'training' ? t(language, 'begin') : t(language, 'next')}<span aria-hidden="true">›</span></button>
       </section>`, 'selection-layout');
   }
 
@@ -323,7 +325,7 @@ export class RiftForgeApp {
       ['normal', 'normal', 'normalDesc', '62%'],
       ['hard', 'hard', 'hardDesc', '88%'],
     ];
-    this.root.innerHTML = this.shell(`${this.topBar(t(language, 'selectDifficulty'), 'back-stages')}
+    this.root.innerHTML = this.shell(`${this.topBar(t(language, 'selectDifficulty'), 'back-fighters')}
       <section class="selection-screen difficulty-selection"><div class="selection-heading"><p class="eyebrow">CPU PROFILE // 03</p><h2>${t(language, 'selectDifficulty')}</h2></div>
         <div class="difficulty-grid">${difficultyCards.map(([id, label, description, meter]) => `<button class="difficulty-card ${this.selection.difficulty === id ? 'is-selected' : ''}" data-action="select-difficulty" data-value="${id}" aria-pressed="${this.selection.difficulty === id}">
           <span class="difficulty-code">${id === 'easy' ? 'E' : id === 'normal' ? 'N' : 'H'}</span><strong>${t(language, label)}</strong><small>${t(language, description)}</small><span class="difficulty-meter"><i style="width:${meter}"></i></span>
@@ -389,7 +391,7 @@ export class RiftForgeApp {
   }
 
   private beginSelection(mode: SelectionMode): void {
-    this.selection = { mode, p1: null, p2: null, stageId: null, difficulty: 'normal' };
+    this.selection = { mode, p1: null, p2: null, stageId: INITIAL_RELEASE_STAGE_ID, difficulty: 'normal' };
     this.activeFighterSlot = 'p1';
     this.setScreen('fighters');
   }
@@ -751,7 +753,14 @@ export class RiftForgeApp {
       case 'shop-preview':
         this.showToast(`${value?.toUpperCase() ?? 'CONTENT'} // ${t(this.settings.language, 'owned')}`);
         break;
-      case 'fighters-next': this.setScreen('stages'); break;
+      case 'fighters-next':
+        if (this.selection.mode === 'training') {
+          void this.requestLandscapeOrientation();
+          this.startGame('training');
+        } else {
+          this.setScreen('difficulty');
+        }
+        break;
       case 'select-stage':
         if (isStageId(value)) {
           this.selection.stageId = value;

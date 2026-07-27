@@ -54,7 +54,7 @@ test.describe('complete illustrated art pass', () => {
     await expectNoBrowserIssues(issues);
   });
 
-  test('runs JUNO versus ORIN on the illustrated Drift Garden', async ({ page }) => {
+  test('runs JUNO versus ORIN on the fixed initial-release arena', async ({ page }) => {
     const issues = observeBrowserIssues(page);
     await gotoMain(page);
     await page.locator('[data-action="quick"]').click();
@@ -69,8 +69,8 @@ test.describe('complete illustrated art pass', () => {
     expect(automaticCpu).not.toBe('juno');
     await page.getByTestId('fighter-orin').click();
     await page.locator('[data-action="fighters-next"]').click();
-    await page.getByTestId('stage-drift-garden').click();
-    await page.locator('[data-action="stages-next"]').click();
+    await expect(page.locator('.stage-grid')).toHaveCount(0);
+    await expect(page.locator('.difficulty-grid')).toBeVisible();
     await page.locator('[data-action="select-difficulty"][data-value="normal"]').click();
     await page.locator('[data-action="begin-match"]').click();
     await expect(page.locator('canvas')).toBeVisible();
@@ -85,7 +85,7 @@ test.describe('complete illustrated art pass', () => {
         p2Ready: p2?.ready ?? false,
         stageReady: window.__RIFT_DEBUG__?.isStageBackgroundReady() ?? false,
       };
-    })).toEqual({ fighters: ['juno', 'orin'], stage: 'drift-garden', p1Ready: true, p2Ready: true, stageReady: true });
+    })).toEqual({ fighters: ['juno', 'orin'], stage: 'vector-spire', p1Ready: true, p2Ready: true, stageReady: true });
     await expectNoBrowserIssues(issues);
   });
 });

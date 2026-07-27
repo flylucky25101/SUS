@@ -23,8 +23,7 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
     await page.getByTestId('fighter-juno').click();
     await page.getByTestId('fighter-orin').click();
     await page.locator('[data-action="fighters-next"]').click();
-    await page.getByTestId('stage-vector-spire').click();
-    await page.locator('[data-action="stages-next"]').click();
+    await expect(page.locator('.stage-grid')).toHaveCount(0);
     await page.locator('[data-action="begin-match"]').click();
     await expect(page.locator('[data-countdown]')).toHaveClass(/is-hidden/, { timeout: 12_000 });
     await page.waitForTimeout(400);

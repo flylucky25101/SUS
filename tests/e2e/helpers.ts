@@ -53,8 +53,8 @@ export async function chooseFighters(page: Page): Promise<void> {
 export async function startQuickMatch(page: Page): Promise<void> {
   await page.locator('[data-action="quick"]').click();
   await chooseFighters(page);
-  await page.getByTestId('stage-vector-spire').click();
-  await page.locator('[data-action="stages-next"]').click();
+  await expect(page.locator('.stage-grid')).toHaveCount(0);
+  await expect(page.locator('.difficulty-grid')).toBeVisible();
   await page.locator('[data-action="select-difficulty"][data-value="normal"]').click();
   await page.locator('[data-action="begin-match"]').click();
   await expect(page.locator('[data-game-shell]')).toBeVisible();
@@ -64,8 +64,7 @@ export async function startQuickMatch(page: Page): Promise<void> {
 export async function startTraining(page: Page): Promise<void> {
   await page.locator('[data-action="training"]').click();
   await chooseFighters(page);
-  await page.getByTestId('stage-vector-spire').click();
-  await page.locator('[data-action="stages-next"]').click();
+  await expect(page.locator('.stage-grid')).toHaveCount(0);
   await expect(page.locator('.training-panel')).toBeVisible();
 }
 
