@@ -31,6 +31,42 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'combat.png') });
     await page.waitForFunction(() => document.querySelector('[data-game-shell]')?.hasAttribute('data-impact') === true, undefined, { timeout: 20_000 });
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'combat-impact.png') });
+    await page.evaluate(() => {
+      const state = window.__RIFT_DEBUG__?.getState();
+      if (state === null || state === undefined) throw new Error('Projectile showcase requires the combat state.');
+      state.paused = true;
+      const projectile = (id: number, ownerId: 'p1' | 'p2', moveId: string, x: number, y: number, velocityX: number, radius: number) => ({
+        id,
+        ownerId,
+        moveId,
+        position: { x, y },
+        velocity: { x: velocityX, y: -0.4 },
+        radius,
+        lifetimeFrames: 90,
+        damage: 8,
+        baseKnockback: 4,
+        knockbackGrowth: 1,
+        angle: 40,
+        hitstun: 12,
+        hitstop: 4,
+        gravity: 0,
+        hitTargets: [],
+      });
+      state.projectiles = [
+        projectile(901, 'p1', 'kade.neutral-special', 430, 350, 9.8, 10),
+        projectile(902, 'p1', 'suri.neutral-special', 570, 350, 7.7, 13),
+        projectile(903, 'p2', 'juno.neutral-special', 710, 350, -11.2, 9),
+        projectile(904, 'p2', 'orin.neutral-special', 850, 350, -5.8, 14),
+      ];
+    });
+    await page.waitForTimeout(120);
+    await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'projectile-showcase.png') });
+    await page.evaluate(() => {
+      const state = window.__RIFT_DEBUG__?.getState();
+      if (state === null || state === undefined) return;
+      state.projectiles = [];
+      state.paused = false;
+    });
     await holdTouchPause(page);
     await expect(page.locator('.pause-card')).toBeVisible();
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'pause.png') });

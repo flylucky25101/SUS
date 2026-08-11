@@ -54,6 +54,14 @@ interface ImpactBurst {
   strong: boolean;
 }
 
+type ProjectileVisualKind = 'lance' | 'comet' | 'gale' | 'singularity' | 'pulse';
+
+interface ProjectileVisualStyle {
+  readonly kind: ProjectileVisualKind;
+  readonly color: number;
+  readonly accent: number;
+}
+
 const PARTICLE_CAPACITY = 120;
 const IMPACT_CAPACITY = 12;
 const FIGHTER_SPRITE_URLS: Readonly<Record<FighterState['definitionId'], string>> = Object.freeze({
@@ -77,6 +85,14 @@ const COMPACT_VIEWPORT_MAX_WIDTH = 960;
 const COMPACT_VIEWPORT_MAX_HEIGHT = 520;
 const CAMERA_COVER_OVERSCAN = 1.03;
 const STAGE_BACKGROUND_OVERSCAN = 1.5;
+
+function projectileVisualStyle(moveId: string, fallbackColor: number): ProjectileVisualStyle {
+  if (moveId.startsWith('kade.')) return { kind: 'lance', color: 0x35d9ff, accent: 0xd9f8ff };
+  if (moveId.startsWith('suri.')) return { kind: 'comet', color: 0xa66bff, accent: 0xf0ddff };
+  if (moveId.startsWith('juno.')) return { kind: 'gale', color: 0x36e6a0, accent: 0xd9fff0 };
+  if (moveId.startsWith('orin.')) return { kind: 'singularity', color: 0xff4d5f, accent: 0xffd8dc };
+  return { kind: 'pulse', color: fallbackColor, accent: 0xffffff };
+}
 
 interface FighterSpriteTracking {
   animation: SpriteAnimationName;
@@ -103,6 +119,7 @@ export class ArenaScene extends Phaser.Scene {
   private backgroundGraphics!: Phaser.GameObjects.Graphics;
   private stageGraphics!: Phaser.GameObjects.Graphics;
   private lightingGraphics!: Phaser.GameObjects.Graphics;
+  private projectileGlowGraphics!: Phaser.GameObjects.Graphics;
   private projectileGraphics!: Phaser.GameObjects.Graphics;
   private effectGraphics!: Phaser.GameObjects.Graphics;
   private debugGraphics!: Phaser.GameObjects.Graphics;
@@ -133,6 +150,7 @@ export class ArenaScene extends Phaser.Scene {
     this.backgroundGraphics = this.add.graphics().setDepth(-20);
     this.stageGraphics = this.add.graphics().setDepth(-5);
     this.lightingGraphics = this.add.graphics().setDepth(2).setBlendMode(Phaser.BlendModes.ADD);
+    this.projectileGlowGraphics = this.add.graphics().setDepth(5).setBlendMode(Phaser.BlendModes.ADD);
     this.projectileGraphics = this.add.graphics().setDepth(6);
     this.effectGraphics = this.add.graphics().setDepth(12).setBlendMode(Phaser.BlendModes.ADD);
     this.debugGraphics = this.add.graphics().setDepth(20);
@@ -727,31 +745,209 @@ export class ArenaScene extends Phaser.Scene {
 
   private drawProjectiles(): void {
     const graphics = this.projectileGraphics;
+    const glow = this.projectileGlowGraphics;
     graphics.clear();
+    glow.clear();
     for (const projectile of this.world.projectiles) {
       const owner = this.world.fighters.find((fighter) => fighter.id === projectile.ownerId);
-      const color = owner === undefined ? 0xffffff : getFighter(owner.definitionId).color;
-      const speed = Math.hypot(projectile.velocity.x, projectile.velocity.y);
-      graphics.lineStyle(Math.max(4, projectile.radius * 1.25), 0x000000, 0.24);
-      graphics.lineBetween(
-        projectile.position.x - projectile.velocity.x * 4.2,
-        projectile.position.y - projectile.velocity.y * 4.2 + 4,
-        projectile.position.x,
-        projectile.position.y + 4,
-      );
-      graphics.lineStyle(Math.max(2, projectile.radius * 0.72), color, 0.3);
-      graphics.lineBetween(projectile.position.x - projectile.velocity.x * 4, projectile.position.y - projectile.velocity.y * 4, projectile.position.x, projectile.position.y);
-      graphics.lineStyle(Math.max(1, projectile.radius * 0.26), 0xffffff, 0.5);
-      graphics.lineBetween(projectile.position.x - projectile.velocity.x * 2.2, projectile.position.y - projectile.velocity.y * 2.2, projectile.position.x, projectile.position.y);
-      graphics.fillStyle(color, 0.17);
-      graphics.fillCircle(projectile.position.x, projectile.position.y, projectile.radius * (1.85 + Math.min(0.4, speed * 0.02)));
-      graphics.fillStyle(color, 0.95);
-      graphics.fillCircle(projectile.position.x, projectile.position.y, projectile.radius);
-      graphics.lineStyle(2, 0xffffff, 0.62);
-      graphics.strokeCircle(projectile.position.x, projectile.position.y, projectile.radius * 0.72);
-      graphics.fillStyle(0xffffff, 0.9);
-      graphics.fillCircle(projectile.position.x - projectile.radius * 0.25, projectile.position.y - projectile.radius * 0.25, projectile.radius * 0.32);
+      const fallbackColor = owner === undefined ? 0xffffff : getFighter(owner.definitionId).color;
+      const style = projectileVisualStyle(projectile.moveId, fallbackColor);
+      const speed = Math.max(0.001, Math.hypot(projectile.velocity.x, projectile.velocity.y));
+      const forwardX = projectile.velocity.x / speed;
+      const forwardY = projectile.velocity.y / speed;
+      const sideX = -forwardY;
+      const sideY = forwardX;
+      const x = projectile.position.x;
+      const y = projectile.position.y;
+      const radius = projectile.radius;
+      const phase = this.world.motionTick * 0.2 + projectile.id * 1.73;
+      const trailLength = clamp(speed * 5.2 + radius * 1.5, 38, 92);
+
+      graphics.lineStyle(Math.max(5, radius * 1.25), 0x02050a, 0.5);
+      graphics.lineBetween(x - forwardX * trailLength, y - forwardY * trailLength + 3, x, y + 3);
+      for (let layer = 3; layer >= 1; layer -= 1) {
+        const ratio = layer / 3;
+        glow.lineStyle(Math.max(2, radius * (0.22 + ratio * 0.48)), style.color, 0.11 + (1 - ratio) * 0.13);
+        glow.lineBetween(
+          x - forwardX * trailLength * ratio,
+          y - forwardY * trailLength * ratio,
+          x - forwardX * radius * 0.2,
+          y - forwardY * radius * 0.2,
+        );
+      }
+      for (let mote = 1; mote <= 3; mote += 1) {
+        const distance = radius * 1.2 + mote * trailLength * 0.23;
+        const sway = Math.sin(phase + mote * 2.1) * radius * (0.22 + mote * 0.05);
+        glow.fillStyle(mote === 1 ? style.accent : style.color, 0.34 - mote * 0.055);
+        glow.fillCircle(
+          x - forwardX * distance + sideX * sway,
+          y - forwardY * distance + sideY * sway,
+          Math.max(1.5, radius * (0.28 - mote * 0.045)),
+        );
+      }
+
+      glow.fillStyle(style.color, 0.12);
+      glow.fillCircle(x, y, radius * (2.45 + Math.sin(phase) * 0.14));
+      glow.fillStyle(style.accent, 0.18);
+      glow.fillCircle(x, y, radius * 1.45);
+
+      if (style.kind === 'lance') this.drawLanceProjectile(graphics, glow, x, y, radius, forwardX, forwardY, sideX, sideY, style, phase);
+      else if (style.kind === 'comet') this.drawCometProjectile(graphics, glow, x, y, radius, style, phase);
+      else if (style.kind === 'gale') this.drawGaleProjectile(graphics, glow, x, y, radius, forwardX, forwardY, sideX, sideY, style, phase);
+      else if (style.kind === 'singularity') this.drawSingularityProjectile(graphics, glow, x, y, radius, style, phase);
+      else this.drawPulseProjectile(graphics, x, y, radius, style);
     }
+  }
+
+  private drawLanceProjectile(
+    graphics: Phaser.GameObjects.Graphics,
+    glow: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    radius: number,
+    forwardX: number,
+    forwardY: number,
+    sideX: number,
+    sideY: number,
+    style: ProjectileVisualStyle,
+    phase: number,
+  ): void {
+    const tipX = x + forwardX * radius * 1.9;
+    const tipY = y + forwardY * radius * 1.9;
+    const rearX = x - forwardX * radius * 1.2;
+    const rearY = y - forwardY * radius * 1.2;
+    const spread = radius * 0.72;
+    graphics.fillStyle(0x02070d, 0.96);
+    graphics.fillTriangle(tipX + forwardX * 3, tipY + forwardY * 3, rearX + sideX * (spread + 3), rearY + sideY * (spread + 3), rearX - sideX * (spread + 3), rearY - sideY * (spread + 3));
+    graphics.fillStyle(style.color, 1);
+    graphics.fillTriangle(tipX, tipY, rearX + sideX * spread, rearY + sideY * spread, rearX - sideX * spread, rearY - sideY * spread);
+    graphics.fillStyle(style.accent, 1);
+    graphics.fillTriangle(
+      x + forwardX * radius * 1.35,
+      y + forwardY * radius * 1.35,
+      x - forwardX * radius * 0.55 + sideX * radius * 0.22,
+      y - forwardY * radius * 0.55 + sideY * radius * 0.22,
+      x - forwardX * radius * 0.55 - sideX * radius * 0.22,
+      y - forwardY * radius * 0.55 - sideY * radius * 0.22,
+    );
+    for (let wing = -1; wing <= 1; wing += 2) {
+      const offset = radius * (1.7 + Math.sin(phase) * 0.08);
+      glow.lineStyle(2.5, style.accent, 0.68);
+      glow.lineBetween(
+        x - forwardX * offset + sideX * wing * radius * 0.55,
+        y - forwardY * offset + sideY * wing * radius * 0.55,
+        x - forwardX * radius * 0.7,
+        y - forwardY * radius * 0.7,
+      );
+    }
+  }
+
+  private drawCometProjectile(
+    graphics: Phaser.GameObjects.Graphics,
+    glow: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    radius: number,
+    style: ProjectileVisualStyle,
+    phase: number,
+  ): void {
+    graphics.fillStyle(0x080413, 0.98);
+    graphics.fillCircle(x, y, radius * 1.08);
+    graphics.lineStyle(3, style.color, 0.95);
+    graphics.strokeCircle(x, y, radius * 0.88);
+    graphics.fillStyle(style.color, 0.92);
+    graphics.fillCircle(x, y, radius * 0.64);
+    graphics.fillStyle(style.accent, 0.96);
+    graphics.fillCircle(x - radius * 0.18, y - radius * 0.2, radius * 0.27);
+    glow.lineStyle(2, style.accent, 0.62);
+    glow.strokeEllipse(x, y, radius * 3.2, radius * 1.35);
+    for (let satellite = 0; satellite < 3; satellite += 1) {
+      const angle = phase + satellite * (Math.PI * 2 / 3);
+      const satelliteX = x + Math.cos(angle) * radius * 1.55;
+      const satelliteY = y + Math.sin(angle) * radius * 0.62;
+      glow.fillStyle(satellite === 0 ? style.accent : style.color, 0.85);
+      glow.fillCircle(satelliteX, satelliteY, Math.max(2, radius * 0.16));
+    }
+  }
+
+  private drawGaleProjectile(
+    graphics: Phaser.GameObjects.Graphics,
+    glow: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    radius: number,
+    forwardX: number,
+    forwardY: number,
+    sideX: number,
+    sideY: number,
+    style: ProjectileVisualStyle,
+    phase: number,
+  ): void {
+    const tipX = x + forwardX * radius * 1.55;
+    const tipY = y + forwardY * radius * 1.55;
+    const rearX = x - forwardX * radius * 1.15;
+    const rearY = y - forwardY * radius * 1.15;
+    graphics.fillStyle(0x03100b, 0.92);
+    graphics.fillTriangle(tipX + forwardX * 2, tipY + forwardY * 2, rearX + sideX * radius * 0.9, rearY + sideY * radius * 0.9, rearX - sideX * radius * 0.9, rearY - sideY * radius * 0.9);
+    graphics.fillStyle(style.color, 0.95);
+    graphics.fillTriangle(tipX, tipY, rearX + sideX * radius * 0.58, rearY + sideY * radius * 0.58, rearX - sideX * radius * 0.58, rearY - sideY * radius * 0.58);
+    graphics.fillStyle(style.accent, 1);
+    graphics.fillCircle(x + forwardX * radius * 0.34, y + forwardY * radius * 0.34, radius * 0.29);
+    for (let arc = 0; arc < 2; arc += 1) {
+      const offset = (arc === 0 ? -1 : 1) * radius * (0.88 + Math.sin(phase + arc) * 0.12);
+      glow.lineStyle(2, style.color, 0.62);
+      glow.lineBetween(
+        x - forwardX * radius * 2.8 + sideX * offset,
+        y - forwardY * radius * 2.8 + sideY * offset,
+        x - forwardX * radius * 0.35 + sideX * offset * 0.18,
+        y - forwardY * radius * 0.35 + sideY * offset * 0.18,
+      );
+    }
+  }
+
+  private drawSingularityProjectile(
+    graphics: Phaser.GameObjects.Graphics,
+    glow: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    radius: number,
+    style: ProjectileVisualStyle,
+    phase: number,
+  ): void {
+    glow.lineStyle(4, style.color, 0.34);
+    glow.strokeCircle(x, y, radius * (1.55 + Math.sin(phase * 1.4) * 0.12));
+    graphics.fillStyle(0x020207, 1);
+    graphics.fillCircle(x, y, radius * 1.08);
+    graphics.lineStyle(3, style.color, 0.96);
+    graphics.strokeCircle(x, y, radius * 0.92);
+    graphics.lineStyle(2, style.accent, 0.74);
+    graphics.strokeCircle(x, y, radius * 0.56);
+    graphics.fillStyle(0x050207, 1);
+    graphics.fillCircle(x, y, radius * 0.43);
+    for (let ray = 0; ray < 5; ray += 1) {
+      const angle = phase * 0.7 + ray * (Math.PI * 2 / 5);
+      const inner = radius * 1.05;
+      const outer = radius * (1.62 + (ray % 2) * 0.18);
+      glow.lineStyle(ray % 2 === 0 ? 3 : 2, ray % 2 === 0 ? style.accent : style.color, 0.56);
+      glow.lineBetween(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner, x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
+    }
+  }
+
+  private drawPulseProjectile(
+    graphics: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    radius: number,
+    style: ProjectileVisualStyle,
+  ): void {
+    graphics.fillStyle(0x03070c, 0.95);
+    graphics.fillCircle(x, y, radius * 1.15);
+    graphics.fillStyle(style.color, 0.96);
+    graphics.fillCircle(x, y, radius);
+    graphics.lineStyle(2, style.accent, 0.8);
+    graphics.strokeCircle(x, y, radius * 0.7);
+    graphics.fillStyle(style.accent, 0.96);
+    graphics.fillCircle(x - radius * 0.24, y - radius * 0.24, radius * 0.28);
   }
 
   private drawDebug(): void {
@@ -797,9 +993,16 @@ export class ArenaScene extends Phaser.Scene {
         this.launch.audio.play('dodge');
         this.emitParticles(event.position.x, event.position.y - 38, 0xb9eeff, 6, 'trail');
         break;
-      case 'projectile':
+      case 'projectile': {
         this.launch.audio.play('special', 0.72);
+        const actor = this.world.fighters.find((fighter) => fighter.id === event.actorId);
+        const fallbackColor = actor === undefined ? 0xffffff : getFighter(actor.definitionId).color;
+        const style = projectileVisualStyle(event.moveId ?? '', fallbackColor);
+        this.emitParticles(event.position.x, event.position.y, style.color, 11, 'trail');
+        this.emitParticles(event.position.x, event.position.y, style.accent, 2, 'ring');
+        this.cameraZoomPunch = Math.max(this.cameraZoomPunch, 0.008);
         break;
+      }
       case 'land':
         this.emitParticles(event.position.x, event.position.y, 0xb6c5d6, 5, 'dust');
         break;
