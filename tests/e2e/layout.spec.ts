@@ -32,9 +32,26 @@ test('keeps landscape HUD separate from touch action controls', async ({ page },
   await startQuickMatch(page);
   const hud = await page.locator('.combat-hud').boundingBox();
   const controls = await page.locator('.action-cluster').boundingBox();
+  const timer = await page.locator('.match-clock').boundingBox();
   expect(hud).not.toBeNull();
   expect(controls).not.toBeNull();
-  if (hud !== null && controls !== null) expect(hud.y + hud.height).toBeLessThan(controls.y + 4);
+  expect(timer).not.toBeNull();
+  if (hud !== null && controls !== null) {
+    expect(hud.height).toBeLessThan(100);
+    expect(hud.y + hud.height).toBeLessThan(controls.y + 4);
+  }
+  if (hud !== null && timer !== null) {
+    expect(timer.x + timer.width / 2).toBeCloseTo(hud.x + hud.width / 2, 0);
+  }
+  const fighterPanels = page.locator('.fighter-hud');
+  await expect(fighterPanels).toHaveCount(2);
+  for (let index = 0; index < 2; index += 1) {
+    const panel = fighterPanels.nth(index);
+    await expect(panel.locator('.hud-identity strong')).toBeVisible();
+    await expect(panel.locator('.damage-value')).toBeVisible();
+    await expect(panel.locator('.stock-dots i')).toHaveCount(3);
+    await expect(panel.locator('.cooldown-track')).toBeVisible();
+  }
   const actionButtons = page.locator('.control-button');
   for (let index = 0; index < await actionButtons.count(); index += 1) {
     const box = await actionButtons.nth(index).boundingBox();

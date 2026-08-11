@@ -460,9 +460,17 @@ export class RiftForgeApp {
       <div class="game-canvas" data-game-canvas></div>
       <div class="game-vignette" aria-hidden="true"></div>
       <header class="combat-hud">
-        <section class="fighter-hud fighter-hud--p1" style="--fighter:${colorHex(first.color)}"><div class="hud-name"><span>P1</span><strong>${first.name}</strong></div><div class="stock-dots" data-hud-stocks="p1"></div><b class="damage-value" data-hud-damage="p1">0%</b><i class="cooldown-line" data-hud-cooldown="p1"></i></section>
-        <div class="match-clock"><small data-stage-label>${getStage(options.stageId).name[language]}</small><time data-hud-timer>${options.mode === 'training' ? '∞' : '2:30'}</time><span data-hud-stock-label>${this.stockLabel(options.mode, false)}</span></div>
-        <section class="fighter-hud fighter-hud--p2" style="--fighter:${colorHex(second.color)}"><div class="hud-name"><span>CPU</span><strong>${second.name}</strong></div><div class="stock-dots" data-hud-stocks="p2"></div><b class="damage-value" data-hud-damage="p2">0%</b><i class="cooldown-line" data-hud-cooldown="p2"></i></section>
+        <section class="fighter-hud fighter-hud--p1" style="--fighter:${colorHex(first.color)}" aria-label="P1 ${first.name}">
+          <div class="hud-identity"><span class="hud-side">P1</span><strong>${first.name}</strong></div>
+          <div class="hud-damage"><b class="damage-value" data-hud-damage="p1">0%</b><small>DMG</small></div>
+          <div class="hud-status"><div class="hud-stock"><span>STOCK</span><div class="stock-dots" data-hud-stocks="p1"></div></div><div class="hud-evade"><span>EVADE</span><div class="cooldown-track"><i class="cooldown-line" data-hud-cooldown="p1"></i></div></div></div>
+        </section>
+        <div class="match-clock"><span class="match-kicker">RIFT MATCH</span><time data-hud-timer>${options.mode === 'training' ? '∞' : '2:30'}</time><div class="match-meta"><small data-stage-label>${getStage(options.stageId).name[language]}</small><span data-hud-stock-label>${this.stockLabel(options.mode, false)}</span></div></div>
+        <section class="fighter-hud fighter-hud--p2" style="--fighter:${colorHex(second.color)}" aria-label="CPU ${second.name}">
+          <div class="hud-identity"><span class="hud-side">CPU</span><strong>${second.name}</strong></div>
+          <div class="hud-damage"><b class="damage-value" data-hud-damage="p2">0%</b><small>DMG</small></div>
+          <div class="hud-status"><div class="hud-stock"><span>STOCK</span><div class="stock-dots" data-hud-stocks="p2"></div></div><div class="hud-evade"><span>EVADE</span><div class="cooldown-track"><i class="cooldown-line" data-hud-cooldown="p2"></i></div></div></div>
+        </section>
       </header>
       <div class="countdown" data-countdown aria-live="assertive"></div>
       ${options.mode === 'training' ? this.trainingPanel() : ''}

@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
-import { forceResult, gotoMain, installStableSettings, startQuickMatch } from './helpers';
+import { forceResult, gotoMain, holdTouchPause, installStableSettings, startQuickMatch } from './helpers';
 
 const SCREENSHOT_DIR = resolve('artifacts/screenshots');
 
@@ -31,7 +31,7 @@ test('captures required visual QA surfaces', async ({ page }, testInfo) => {
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'combat.png') });
     await page.waitForFunction(() => document.querySelector('[data-game-shell]')?.hasAttribute('data-impact') === true, undefined, { timeout: 20_000 });
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'combat-impact.png') });
-    await page.keyboard.press('Escape');
+    await holdTouchPause(page);
     await expect(page.locator('.pause-card')).toBeVisible();
     await page.screenshot({ path: resolve(SCREENSHOT_DIR, 'pause.png') });
     await page.locator('[data-action="resume"]').click();
